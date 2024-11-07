@@ -46,7 +46,6 @@ internal sealed class FloorQueueManager : IFloorQueueManager
 
             if (request.Data != null)
                 request.Data.Dequeue();
-
         }
         catch (Exception)
         {

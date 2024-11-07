@@ -10,8 +10,7 @@ namespace ES.Infrastructure.Implementations.Services;
 internal sealed class ElevatorService : IElevatorService
 {
     private readonly IConfiguration _config;
-    private readonly List<Elevator> _elevators;
-    private readonly Dictionary<int, Queue<int>> _floorQueues;
+    
 
     public ElevatorService(IConfiguration config)
     {

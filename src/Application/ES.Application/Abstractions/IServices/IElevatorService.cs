@@ -10,6 +10,6 @@ public interface IElevatorService
     Task<Response<ElevatorInfo>> LoadElevator(ElevatorRequest request);
     Task<Response<ElevatorInfo>> DispatchElevator(ElevatorRequest request);
     Task<Response<ElevatorInfo>> OffLoadElevator(ElevatorRequest request);
-    void ResetElevator(ElevatorInfo elevator);
+    Task<Response<ElevatorInfo>> ResetElevator(ElevatorInfo elevator);
 
 }
