@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Abstractions\Ihandlers\**" />
+    <Compile Remove="Protos\**" />
+    <EmbeddedResource Remove="Abstractions\Ihandlers\**" />
+    <EmbeddedResource Remove="Protos\**" />
+    <None Remove="Abstractions\Ihandlers\**" />
+    <None Remove="Protos\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.5.187" />
+    <PackageReference Include="MessagePack.Annotations" Version="2.5.187" />
+    <PackageReference Include="MessagePack.AspNetCoreMvcFormatter" Version="2.5.187" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Quartz" Version="3.13.0" />
+    <PackageReference Include="Refit" Version="7.2.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Domain\ES.Domain\ES.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\ES.Shared\ES.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\Elevator\Contracts\" />
+    <Folder Include="Features\Elevator\Queries\" />
+  </ItemGroup>
+
+</Project>
