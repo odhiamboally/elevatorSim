@@ -15,13 +15,14 @@ public class ElevatorController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly IServiceManager _serviceManager;
+
     public ElevatorController(IConfiguration configuration, IServiceManager serviceManager)
     {
           _configuration = configuration;
         _serviceManager = serviceManager;
     }
 
-    [HttpPost("findnearestelevator")]
+    [HttpPost("findnearest")]
     public async Task<ActionResult> FindNearestElevator([FromBody] ElevatorRequest request)
     {
         var validator = new ElevatorRequestValidator();
@@ -45,6 +46,31 @@ public class ElevatorController : ControllerBase
         return Ok(serviceResponse.Data);
     }
 
-    
+
+    [HttpPost("dispatch")]
+    public async Task<ActionResult> DispatchElevator([FromBody] ElevatorRequest request)
+    {
+        var validator = new ElevatorRequestValidator();
+        if (!validator.Validate(request).IsValid)
+        {
+            throw new ValidationException("Request Object is Invalid", errors: validator.Validate(request).Errors);
+        }
+
+        var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(request);
+        if (!serviceResponse.Successful)
+        {
+            if (serviceResponse.Exception is NoContentException || serviceResponse.Data == null)
+                return NoContent();
+
+            return BadRequest(serviceResponse);
+        }
+
+        if (serviceResponse.Data == null)
+            return NoContent();
+
+        return Ok(serviceResponse.Data);
+    }
+
+
 
 }

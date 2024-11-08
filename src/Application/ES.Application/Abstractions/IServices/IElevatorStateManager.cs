@@ -13,5 +13,4 @@ public interface IElevatorStateManager
 {
     Task<Response<bool>> UpdateElevatorState(int elevatorId, ElevatorInfo updatedInfo);
     Task<Response<ElevatorInfo>> GetElevatorState(int elevatorId);
-    Task<Response<ElevatorInfo>> FindAvailableElevator(int requestedFloor, Direction direction);
 }

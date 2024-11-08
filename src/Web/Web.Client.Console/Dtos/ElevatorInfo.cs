@@ -12,5 +12,7 @@ internal sealed record ElevatorInfo
     public Status Status { get; init; }
     public Direction Direction { get; private set; }
     public DateTimeOffset EstimatedArrivalTime { get; private set; }
+    private Queue<ElevatorRequest> RequestQueue { get; } = [];
+
 
 }

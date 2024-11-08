@@ -12,8 +12,6 @@ namespace ES.Infrastructure.Implementations.Services;
 
 internal sealed class FloorQueueManager : IFloorQueueManager
 {
-    private readonly Dictionary<int, Queue<ElevatorRequest>> _floorQueues = new();
-
     public FloorQueueManager()
     {
             
@@ -23,13 +21,7 @@ internal sealed class FloorQueueManager : IFloorQueueManager
     {
         try
         {
-            var response = await GetFloorQueue(floorId);
-            if(response.Data == null)
-            {
-                return Response<bool>.Failure("No Queue on the specified floor");
-            }
-
-            return Response<bool>.Success("Request successfully added to queue", true);
+            
         }
         catch (Exception)
         {
@@ -42,10 +34,7 @@ internal sealed class FloorQueueManager : IFloorQueueManager
     {
         try
         {
-            var request = await GetFloorQueue(floorId);
-
-            if (request.Data != null)
-                request.Data.Dequeue();
+            
         }
         catch (Exception)
         {
@@ -58,12 +47,7 @@ internal sealed class FloorQueueManager : IFloorQueueManager
     {
         try
         {
-            if (!_floorQueues.ContainsKey(floorId))
-                _floorQueues[floorId] = new Queue<ElevatorRequest>();
-
-            var floorQueue = _floorQueues[floorId];
-
-            return Response<Queue<ElevatorRequest>>.Success("Floor Queue", floorQueue);
+            
         }
         catch (Exception)
         {

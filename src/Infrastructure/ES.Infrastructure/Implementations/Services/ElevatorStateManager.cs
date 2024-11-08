@@ -17,11 +17,6 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
             
     }
 
-    public Task<Response<ElevatorInfo>> FindAvailableElevator(int requestedFloor, Direction direction)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task<Response<ElevatorInfo>> GetElevatorState(int elevatorId)
     {
         throw new NotImplementedException();

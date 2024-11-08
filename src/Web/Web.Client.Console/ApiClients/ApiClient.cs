@@ -14,7 +14,7 @@ internal sealed class ApiClient : IApiClient
         _httpClient = httpClientFactory.CreateClient("ES");
     }
 
-    public async Task<ElevatorInfo> CallElevator(ElevatorRequest request, string apiEndPoint)
+    public async Task<ElevatorInfo> FindNearestElevator(ElevatorRequest request, string apiEndPoint)
     {
         var apiResponse = await _httpClient.PostAsJsonAsync(apiEndPoint, request);
         if (!apiResponse.IsSuccessStatusCode)
@@ -22,7 +22,18 @@ internal sealed class ApiClient : IApiClient
 
         }
 
-        apiResponse.EnsureSuccessStatusCode();
+        var elevatorResponse = await apiResponse.Content.ReadFromJsonAsync<ElevatorInfo>();
+        return elevatorResponse!;
+    }
+
+    public async Task<ElevatorInfo> DispatchElevator(ElevatorRequest request, string apiEndPoint)
+    {
+        var apiResponse = await _httpClient.PostAsJsonAsync(apiEndPoint, request);
+        if (!apiResponse.IsSuccessStatusCode)
+        {
+
+        }
+
         var accountInfoResponse = await apiResponse.Content.ReadFromJsonAsync<ElevatorInfo>();
         return accountInfoResponse!;
     }

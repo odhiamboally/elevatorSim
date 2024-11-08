@@ -1,5 +1,6 @@
 // See https://aka.ms/new-console-template for more information
 using System.Diagnostics;
+using Iced.Intel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Web.Client.Console.ApiClients;
@@ -53,28 +54,29 @@ ElevatorRequest elevatorRequest = new()
     Direction = Methods.GetDirection(inputDirection),
 };
 
-Stopwatch stopwatch = Stopwatch.StartNew();
+var findElevatorEndPoint = config["AppSettings:EndPoints:Elevator:FindNearestElevator"];
+var dispatchElevatorEndPoint = config["AppSettings:EndPoints:Elevator:DispatchElevator"];
 
-var apiEndPoint = config["AppSettings:EndPoints:Elevator:FindNearestElevator"];
-var reponse = await Methods.CallElevator(apiClient, elevatorRequest, apiEndPoint!);
+var findElevatorResponse = await Methods.FindNearestElevator(apiClient, elevatorRequest, findElevatorEndPoint!);
+var dispatchresponse = await Methods.DispatchElevator(apiClient, elevatorRequest, dispatchElevatorEndPoint!);
 
-stopwatch.Stop();
-
-Console.WriteLine($"Elevator Capacity: {reponse.Capacity} Elevator Load: {reponse.CurrentLoad} Elevator Direction: {reponse.Direction}");
+Console.WriteLine($"Elevator Capacity: {findElevatorResponse.Capacity} Elevator Load: {findElevatorResponse.CurrentLoad} Elevator Direction: {findElevatorResponse.Direction}");
 Console.WriteLine();
-
-Console.WriteLine();
-Console.WriteLine($"Time taken: {stopwatch.ElapsedMilliseconds} ms");
-Console.ReadKey();
 
 
 #endregion
 
 internal class Methods
 {
-    public async static Task<ElevatorInfo> CallElevator(IApiClient apiClient, ElevatorRequest request, string apiEndPoint)
+    public async static Task<ElevatorInfo> FindNearestElevator(IApiClient apiClient, ElevatorRequest request, string apiEndPoint)
     {
-        var elevator = await apiClient.CallElevator(request, apiEndPoint);
+        var elevator = await apiClient.FindNearestElevator(request, apiEndPoint);
+        return elevator;
+    }
+
+    public async static Task<ElevatorInfo> DispatchElevator(IApiClient apiClient, ElevatorRequest request, string apiEndPoint)
+    {
+        var elevator = await apiClient.DispatchElevator(request, apiEndPoint);
         return elevator;
     }
 

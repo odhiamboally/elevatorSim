@@ -4,5 +4,6 @@ namespace Web.Client.Console.ApiClients;
 
 internal interface IApiClient
 {
-    Task<ElevatorInfo> CallElevator(ElevatorRequest request, string apiEndPoint);
+    Task<ElevatorInfo> FindNearestElevator(ElevatorRequest request, string apiEndPoint);
+    Task<ElevatorInfo> DispatchElevator(ElevatorRequest request, string apiEndPoint);
 }
