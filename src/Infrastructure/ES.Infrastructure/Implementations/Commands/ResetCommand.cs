@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ES.Infrastructure.Implementations.Commands;
+
+
 internal sealed class ResetCommand : IElevatorCommand
 {
     public ResetCommand()

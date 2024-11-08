@@ -11,5 +11,4 @@ public class Elevator
     public int CurrentFloor { get; private set; } = 0;
     public Status Status { get; private set; }
     public Direction Direction { get; private set; }
-    private Queue<int> RequestQueue { get; } = [];
 }
