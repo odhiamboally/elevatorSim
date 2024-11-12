@@ -67,7 +67,6 @@ internal sealed class ElevatorService : IElevatorService
             //    .WithUpdatedStatus(Status.Moving)
             //    .WithUpdatedDirection(elevator.CurrentFloor < request.ToFloor ? Direction.Up : Direction.Down);
 
-
             var dispatchedElevator = new ElevatorInfo
             {
                 Id = elevatorId,
@@ -85,9 +84,9 @@ internal sealed class ElevatorService : IElevatorService
             //await _elevatorStateManager.UpdateElevatorState(elevatorId, elevator);
             return Response<bool>.Success("Elevator dispatched successfully.", true);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return Response<bool>.Failure("Error dispatching elevator.", false, ex);
+            throw;
         }
     }
 
@@ -236,8 +235,6 @@ internal sealed class ElevatorService : IElevatorService
     {
         await _elevatorStateManager.AddRequestToQueue(elevator.Id, request);
     }
-
-
 
     private async Task<ElevatorInfo?> FindBestFitElevator(ElevatorRequest request)
     {
