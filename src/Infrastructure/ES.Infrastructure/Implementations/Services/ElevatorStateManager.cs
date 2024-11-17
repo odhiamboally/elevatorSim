@@ -17,7 +17,7 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
             
     }
 
-    public Task<Response<ElevatorInfo>> GetElevatorState(int elevatorId)
+    public Task<Response<bool>> AddRequestToQueue(int id, ElevatorRequest request)
     {
         throw new NotImplementedException();
     }

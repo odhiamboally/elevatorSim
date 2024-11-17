@@ -18,11 +18,6 @@ internal sealed class LogService : ILogService
         throw new NotImplementedException();
     }
 
-    public Task<Response<List<LogResponse>>> FindAllAsync(PaginationSetting paginationSetting)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<Response<LogResponse>> FindByIdAsync(int id)
     {
         Log.Information("FindByIdAsync called with id: {Id}", id);
@@ -46,12 +41,6 @@ internal sealed class LogService : ILogService
             return Response<LogResponse>.Failure("An error occurred while fetching the log", null, ex);
         }
     }
-
-    public Task<Response<List<LogResponse>>> SearchAsync(SearchRequest searchRequest)
-    {
-        throw new NotImplementedException();
-    }
-
 
     private async Task<LogResponse?> FetchLogByIdAsync()
     {

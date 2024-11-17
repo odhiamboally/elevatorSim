@@ -14,4 +14,5 @@ public interface IFloorService
     Task<Response<bool>> AddRequestToFloorQueue(ElevatorRequest request);
     Task<Response<bool>> RequeuePartialRequestToFloorQueue(ElevatorRequest request);
     Task<Response<bool>>? DequeueRequestFromFloorQueue(ElevatorRequest request);
+    Task RequeuePartialRequest(int fromFloor, ElevatorInfo data);
 }

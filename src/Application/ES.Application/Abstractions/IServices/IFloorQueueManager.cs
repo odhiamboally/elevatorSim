@@ -7,4 +7,5 @@ using System.Threading.Tasks;
 namespace ES.Application.Abstractions.IServices;
 public interface IFloorQueueManager
 {
+    Task ProcessAllFloorQueues();
 }

@@ -32,25 +32,25 @@ public static class DependencyInjection
             options.Scheduling.OverWriteExistingData = true; // default: true
         });
 
-        services.AddQuartz(q =>
-        {
-            var jobKey = new JobKey("DHTMaintenanceJob");
-            q.AddJob<DhtMaintenanceJob>(opts => opts
-                .WithIdentity(jobKey));
+        //services.AddQuartz(q =>
+        //{
+        //    var jobKey = new JobKey("DHTMaintenanceJob");
+        //    q.AddJob<DhtMaintenanceJob>(opts => opts
+        //        .WithIdentity(jobKey));
 
-            q.AddTrigger(opts => opts
-                .ForJob(jobKey)
-                .WithIdentity("DHTMaintenanceJob-trigger")
-                //.WithCronSchedule("0 0 * * * ?")); // Every hour
-                .WithSimpleSchedule(x => x
-                    .WithInterval(TimeSpan.FromMinutes(5))
-                    .RepeatForever())
-            );
+        //    q.AddTrigger(opts => opts
+        //        .ForJob(jobKey)
+        //        .WithIdentity("DHTMaintenanceJob-trigger")
+        //        //.WithCronSchedule("0 0 * * * ?")); // Every hour
+        //        .WithSimpleSchedule(x => x
+        //            .WithInterval(TimeSpan.FromMinutes(5))
+        //            .RepeatForever())
+        //    );
 
-        });
+        //});
 
-        //Add the Quartz hosted service
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+        ////Add the Quartz hosted service
+        //services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         services.AddScoped<IServiceManager, ServiceManager>();
         services.AddScoped<ILogService, LogService>();

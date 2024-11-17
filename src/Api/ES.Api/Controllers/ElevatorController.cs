@@ -23,6 +23,7 @@ public class ElevatorController : ControllerBase
     }
 
     [HttpPost("findnearest")]
+    [ValidateAntiForgeryToken]
     public async Task<ActionResult> FindNearestElevator([FromBody] ElevatorRequest request)
     {
         var validator = new ElevatorRequestValidator();
@@ -48,7 +49,8 @@ public class ElevatorController : ControllerBase
 
 
     [HttpPost("dispatch")]
-    public async Task<ActionResult> DispatchElevator([FromBody] ElevatorRequest request)
+    [ValidateAntiForgeryToken]
+    public async Task<ActionResult> DispatchElevator([FromBody] ElevatorRequest request, int elevatorId)
     {
         var validator = new ElevatorRequestValidator();
         if (!validator.Validate(request).IsValid)
@@ -56,17 +58,14 @@ public class ElevatorController : ControllerBase
             throw new ValidationException("Request Object is Invalid", errors: validator.Validate(request).Errors);
         }
 
-        var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(request);
+        var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(elevatorId, request);
         if (!serviceResponse.Successful)
         {
-            if (serviceResponse.Exception is NoContentException || serviceResponse.Data == null)
+            if (serviceResponse.Exception is NoContentException || !serviceResponse.Data)
                 return NoContent();
 
             return BadRequest(serviceResponse);
         }
-
-        if (serviceResponse.Data == null)
-            return NoContent();
 
         return Ok(serviceResponse.Data);
     }

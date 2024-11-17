@@ -99,6 +99,11 @@ internal sealed class FloorService : IFloorService
         }
     }
 
+    public Task RequeuePartialRequest(int fromFloor, ElevatorInfo data)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<Response<bool>> RequeuePartialRequestToFloorQueue(ElevatorRequest request)
     {
         try

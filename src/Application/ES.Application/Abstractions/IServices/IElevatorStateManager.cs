@@ -11,6 +11,6 @@ namespace ES.Application.Abstractions.IServices;
 
 public interface IElevatorStateManager
 {
+    Task<Response<bool>> AddRequestToQueue(int id, ElevatorRequest request);
     Task<Response<bool>> UpdateElevatorState(int elevatorId, ElevatorInfo updatedInfo);
-    Task<Response<ElevatorInfo>> GetElevatorState(int elevatorId);
 }
