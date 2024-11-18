@@ -8,6 +8,6 @@ public record ElevatorRequest
     public int FromFloor { get; init; }
     public int ToFloor { get; init; }
     public int PeopleCount { get; init; }
-    public Direction Direction { get; init; }
+    public ElevatorDirection Direction { get; init; }
     
 }

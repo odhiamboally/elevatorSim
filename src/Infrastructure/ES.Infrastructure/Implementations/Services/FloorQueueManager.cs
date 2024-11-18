@@ -13,4 +13,9 @@ internal sealed class FloorQueueManager : IFloorQueueManager
     {
         
     }
+
+    public Task ProcessAllFloorQueues()
+    {
+        throw new NotImplementedException();
+    }
 }

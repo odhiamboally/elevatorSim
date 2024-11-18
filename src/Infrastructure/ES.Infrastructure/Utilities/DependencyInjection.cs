@@ -14,6 +14,8 @@ using ES.Infrastructure.Implementations.Repositories;
 using ES.Infrastructure.Implementations.Services;
 using Refit;
 using DbContext = ES.Persistence.DataContext.DbContext;
+using ES.Application.Abstractions.Hubs;
+using ES.Infrastructure.Implementations.Hubs;
 
 namespace ES.Infrastructure.Utilities;
 public static class DependencyInjection
@@ -32,25 +34,27 @@ public static class DependencyInjection
             options.Scheduling.OverWriteExistingData = true; // default: true
         });
 
-        services.AddQuartz(q =>
-        {
-            var jobKey = new JobKey("DHTMaintenanceJob");
-            q.AddJob<DhtMaintenanceJob>(opts => opts
-                .WithIdentity(jobKey));
+        //services.AddQuartz(q =>
+        //{
+        //    var jobKey = new JobKey("DHTMaintenanceJob");
+        //    q.AddJob<DhtMaintenanceJob>(opts => opts
+        //        .WithIdentity(jobKey));
 
-            q.AddTrigger(opts => opts
-                .ForJob(jobKey)
-                .WithIdentity("DHTMaintenanceJob-trigger")
-                //.WithCronSchedule("0 0 * * * ?")); // Every hour
-                .WithSimpleSchedule(x => x
-                    .WithInterval(TimeSpan.FromMinutes(5))
-                    .RepeatForever())
-            );
+        //    q.AddTrigger(opts => opts
+        //        .ForJob(jobKey)
+        //        .WithIdentity("DHTMaintenanceJob-trigger")
+        //        //.WithCronSchedule("0 0 * * * ?")); // Every hour
+        //        .WithSimpleSchedule(x => x
+        //            .WithInterval(TimeSpan.FromMinutes(5))
+        //            .RepeatForever())
+        //    );
 
-        });
+        //});
 
-        //Add the Quartz hosted service
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+        ////Add the Quartz hosted service
+        //services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+        services.AddSignalR();
 
         services.AddScoped<IServiceManager, ServiceManager>();
         services.AddScoped<ILogService, LogService>();
@@ -58,6 +62,9 @@ public static class DependencyInjection
         services.AddScoped<IElevatorStateManager, ElevatorStateManager>();
         services.AddScoped<IFloorService, FloorService>();
         services.AddScoped<IFloorQueueManager, FloorQueueManager>();
+
+        services.AddScoped<IHubManager, HubManager>();
+        services.AddScoped<IElevatorHub, ElevatorHub>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
