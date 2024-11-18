@@ -1,0 +1,290 @@
+﻿@page "/elevator"
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<PageTitle>Elevator States</PageTitle>
+<h1>Elevator States</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-4 my-1">
+        <div class="row">
+            @foreach (var state in elevatorStates)
+            {
+                <div class="col-md-3 my-4">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white font-weight-bold">
+                            Elevator @state.Id
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Current Floor: @state.CurrentFloor</p>
+                            <p class="card-text">Current Load: @state.CurrentLoad</p>
+                            <p class="card-text">Direction: @state.Direction</p>
+                            <p class="card-text">Status: @state.Status</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-4 my-1">
+        <div class="card m-1">
+            <div class="card-header bg-black text-white font-weight-bold">
+                Request Elevator
+            </div>
+            <div class="card-body">
+
+                @if (isFormVisible)
+                { 
+                    <div class="request-form">
+
+                        <EditForm Model="@elevatorRequest" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="mb-3">
+                                <label for="fromFloor" class="form-label">From Floor</label>
+                                <InputNumber id="fromFloor"
+                                @bind-Value="FromFloor"
+                                class="form-control"
+                                min="1" max="20" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="toFloor" class="form-label">To Floor</label>
+                                <InputNumber id="toFloor"
+                                @bind-Value="ToFloor"
+                                class="form-control"
+                                min="1" max="20" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="peopleCount" class="form-label">Number of Passengers</label>
+                                <InputNumber id="peopleCount"
+                                @bind-Value="PeopleCount"
+                                class="form-control" />
+                            </div>
+
+                            <div class="mb-3">
+                                <button type="submit" class="btn btn-primary btn-sm">Request Elevator</button>
+                            </div>
+                        </EditForm>
+
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 my-1">
+        @for (int i = 20; i >= 1; i--) // Start from the top floor
+        {
+            <div class="row mb-2">
+                <div class="col-md-2">
+                    <span class="floor-label">Floor @i</span>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success btn-sm" @onclick="() => OpenRequestForm(i, 'Up')">Up</button>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-danger btn-sm" @onclick="() => OpenRequestForm(i, 'Down')">Down</button>
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+<hr />
+
+
+
+
+@code {
+
+    private int FromFloor;
+    private int ToFloor;
+    private int PeopleCount;
+
+
+    private int ElevatorId;
+    private int Capacity;
+    private int CurrentLoad;
+    private int CurrentFloor;
+    private string? Status;
+    private int Direction;
+
+    private ElevatorRequest? elevatorRequest;
+    private ElevatorInfo? elevatorInfo;
+    private List<ElevatorInfo> elevatorStates = [];
+
+    [Inject]
+    private IConfiguration Configuration { get; set; } = default!;
+
+    [Inject]
+    private ISignalRService SignalRService { get; set; } = default!;
+
+    [Inject]
+    private IApiClient ApiClient { get; set; } = default!;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!elevatorStates.Any())
+        {
+            // Fetch initial elevator states from API
+            await LoadElevatorStatesAsync();
+        }
+
+        SignalRService.ElevatorStateReceived += OnElevatorStateReceived;
+        await SignalRService.StartAsync();
+    }
+
+    private void OnElevatorStateReceived(int elevatorId, ElevatorInfo info)
+    {
+        // Add new state to the list (or update existing state based on the elevatorId)
+        var existingElevator = elevatorStates.FirstOrDefault(e => e.Id == elevatorId);
+        if (existingElevator != null)
+        {
+            var index = elevatorStates.IndexOf(existingElevator);
+            elevatorStates[index] = info;  
+        }
+        else
+        {
+            elevatorStates.Add(info); // Add new elevator state
+        }
+
+        StateHasChanged(); // Refresh the UI
+    }
+
+    private async Task LoadElevatorStatesAsync()
+    {
+        try
+        {
+            var apiEndPoint = Configuration["AppSettings:EndPoints:Elevator:BroadCastState"];
+            if (string.IsNullOrEmpty(apiEndPoint))
+            {
+                throw new ApiEndPointException("API endpoint is not configured.");
+            }
+
+            elevatorStates = await ApiClient.FetchElevatorData(apiEndPoint);
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    private async Task<ElevatorInfo> HandleValidSubmit(EditContext context)
+    {
+        try
+        {
+            // Create a new ElevatorRequest from form values
+            elevatorRequest = new ElevatorRequest(FromFloor, ToFloor, PeopleCount, Direction);
+
+            var validator = new ElevatorRequestValidator();
+            if (!validator.Validate(elevatorRequest).IsValid)
+            {
+                throw new ValidationException("Request Object is Invalid", errors: validator.Validate(elevatorRequest).Errors);
+            }
+
+            var apiEndPoint = Configuration["AppSettings:EndPoints:Elevator:FindNearest"];
+            if (string.IsNullOrEmpty(apiEndPoint))
+            {
+                throw new ApiEndPointException("API endpoint is not configured.");
+            }
+
+            var elevatorInfo = await ApiClient.RequestElevator(elevatorRequest, apiEndPoint);
+
+            // Simulate Waiting - Here we just need to do UI waiting, not updating elevator status
+            elevatorStates[elevatorInfo.Id].UpdateStatus() = "Waiting...";
+            await Task.Delay(2000);
+
+            // Simulate Loading
+            elevatorStates[elevatorInfo.Id].UpdateStatus(ElevatorStatus.Loading);
+            await Task.Delay(3000);
+
+            // Simulate Movement
+            foreach (var elevatorRequest in elevatorStates[elevatorInfo.Id].RequestQueue)
+            {
+                if (elevatorRequest.FromFloor > elevatorStates[elevatorInfo.Id].CurrentFloor)
+                {
+                    elevatorStates[elevatorInfo.Id].UpdateDirection(ElevatorDirection.Up);
+                    while (elevatorStates[elevatorInfo.Id].CurrentFloor < elevatorRequest.ToFloor)
+                    {
+                        var newFloor = elevatorStates[elevatorInfo.Id].CurrentFloor + 1;
+                        elevatorStates[elevatorInfo.Id].UpdateCurrentFloor(newFloor);
+                        await Task.Delay(1000); // Simulate time to move 1 floor
+                    }
+                }
+                else if (elevatorRequest.ToFloor < elevatorStates[elevatorInfo.Id].CurrentFloor)
+                {
+                    elevatorStates[elevatorInfo.Id].UpdateDirection(ElevatorDirection.Down);
+                    while (elevatorStates[elevatorInfo.Id].CurrentFloor > elevatorRequest.ToFloor)
+                    {
+                        var newFloor = elevatorStates[elevatorInfo.Id].CurrentFloor - 1;
+                        elevatorStates[elevatorInfo.Id].UpdateCurrentFloor(newFloor);
+                        await Task.Delay(1000); // Simulate time to move 1 floor
+                    }
+                }
+
+                // Simulate Offloading
+                elevatorStates[elevatorInfo.Id].UpdateStatus(ElevatorStatus.OffLoading);
+                await Task.Delay(2000);
+
+                // Remove floor from queue
+                elevatorStates[elevatorInfo.Id].DequeueRequest();
+
+                // Reset Status
+                elevatorStates[elevatorInfo.Id] = new(0,0,0, ElevatorStatus.Idle, ElevatorDirection.Idle);
+
+
+            }
+
+            if (elevatorInfo == null)
+            {
+                throw new NotFoundException("All Elevator Might Be Busy. Please wait..");
+            }
+
+            // Simulate updating elevator state (e.g., moving elevator)
+            // Ideally this will be handled by the SignalR service, updating the UI automatically
+
+            return elevatorInfo!;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     var connection = new HubConnectionBuilder()
+    //         .WithUrl(NavigationManager.ToAbsoluteUri("/elevatorHub"))
+    //         .Build();
+
+    //     connection.On<int, ElevatorInfo>("ReceiveElevatorState", (elevatorId, elevatorInfo) =>
+    //     {
+    //         ElevatorId = elevatorId;
+    //         Capacity = 10;
+    //         CurrentLoad = elevatorInfo.CurrentLoad;
+    //         CurrentFloor = elevatorInfo.CurrentFloor;
+    //         Direction = elevatorInfo.Direction.ToString();
+    //         Status = elevatorInfo.Status.ToString();
+
+    //         StateHasChanged();
+    //     });
+
+    //     await connection.StartAsync();
+    // }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        await Task.CompletedTask; 
+    }
+}

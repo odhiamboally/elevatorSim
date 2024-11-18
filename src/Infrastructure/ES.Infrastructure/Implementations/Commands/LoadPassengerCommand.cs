@@ -26,11 +26,10 @@ internal class LoadPassengerCommand : IElevatorCommand
 
     public async Task ExecuteAsync()
     {
-        // Logic to load passengers partially if capacity is exceeded.
-        var result = await _serviceManager.ElevatorService.HandlePartialLoad(_request.FromFloor, _request);
+        var result = await _serviceManager.ElevatorService.LoadElevator(elevatorId, _request);
         if (!result.Successful && result.Data != null)
         {
-            await _serviceManager.FloorService.RequeuePartialRequest(_request.FromFloor, result.Data);
+            await _serviceManager.ElevatorStateManager.BroadcastStateAsync(elevatorId, result.Data);
         }
     }
 }

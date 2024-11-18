@@ -14,6 +14,8 @@ using ES.Infrastructure.Implementations.Repositories;
 using ES.Infrastructure.Implementations.Services;
 using Refit;
 using DbContext = ES.Persistence.DataContext.DbContext;
+using ES.Application.Abstractions.Hubs;
+using ES.Infrastructure.Implementations.Hubs;
 
 namespace ES.Infrastructure.Utilities;
 public static class DependencyInjection
@@ -52,12 +54,17 @@ public static class DependencyInjection
         ////Add the Quartz hosted service
         //services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
+        services.AddSignalR();
+
         services.AddScoped<IServiceManager, ServiceManager>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IElevatorService, ElevatorService>();
         services.AddScoped<IElevatorStateManager, ElevatorStateManager>();
         services.AddScoped<IFloorService, FloorService>();
         services.AddScoped<IFloorQueueManager, FloorQueueManager>();
+
+        services.AddScoped<IHubManager, HubManager>();
+        services.AddScoped<IElevatorHub, ElevatorHub>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));

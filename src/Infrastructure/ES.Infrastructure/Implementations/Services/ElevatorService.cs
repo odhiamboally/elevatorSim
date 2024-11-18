@@ -1,4 +1,6 @@
 ﻿
+using AutoMapper;
+
 using ES.Application.Abstractions.ICommands;
 using ES.Application.Abstractions.Interfaces;
 using ES.Application.Abstractions.IServices;
@@ -23,19 +25,22 @@ internal sealed class ElevatorService : IElevatorService
     private readonly IFloorQueueManager _floorQueueManager;
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
     public ElevatorService(
         IConfiguration config, 
         IFloorService floorService, 
         IElevatorStateManager elevatorStateManager, 
         IFloorQueueManager floorQueueManager,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _config = config;
         _floorService = floorService;
         _elevatorStateManager = elevatorStateManager;
         _floorQueueManager = floorQueueManager;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         
     }
 
@@ -68,9 +73,8 @@ internal sealed class ElevatorService : IElevatorService
             if (elevatorForDispatch == null)
                 return Response<bool>.Failure("Elevator not found.");
 
-            ElevatorInfo optimalElevator = new ElevatorInfo(
+            ElevatorInfo optimalElevator = new (
                 elevatorForDispatch.Id,
-                elevatorForDispatch.Capacity,
                 elevatorForDispatch.CurrentLoad,
                 elevatorForDispatch.CurrentFloor,
                 elevatorForDispatch.Status,
@@ -83,7 +87,7 @@ internal sealed class ElevatorService : IElevatorService
             optimalElevator.UpdateDirection(optimalElevator.CurrentFloor < request.ToFloor ? ElevatorDirection.Up : ElevatorDirection.Down);
             optimalElevator.EnqueueRequest(request);
 
-            await _elevatorStateManager.UpdateElevatorState(elevatorId, optimalElevator);
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, optimalElevator);
 
             return Response<bool>.Success("Elevator dispatched successfully.", true);
         }
@@ -130,7 +134,6 @@ internal sealed class ElevatorService : IElevatorService
 
             ElevatorInfo optimalElevator = new ElevatorInfo(
                 elevator.Id,
-                elevator.Capacity,
                 elevator.CurrentLoad,
                 elevator.CurrentFloor,
                 elevator.Status,
@@ -147,28 +150,16 @@ internal sealed class ElevatorService : IElevatorService
         }
     }
 
-    public Task<Response<ElevatorInfo>> GetElevatorStatus(int elevatorId)
-    {
-        throw new NotImplementedException();
-    }
-
     /// <summary>
     /// Handles a partial load scenario when only part of a request can be loaded due to capacity limits.
     /// </summary>
-    public async Task<Response<ElevatorInfo>> HandlePartialLoad(int elevatorId, ElevatorRequest request)
+    public async Task<Response<ElevatorInfo>> HandlePartialLoad(Elevator optimalElevator, ElevatorRequest request, int availableSpace)
     {
         try
         {
-            var elevatorResponse = await _unitOfWork.ElevatorRepository.FindByIdAsync(elevatorId);
-            if (elevatorResponse == null)
-                return Response<ElevatorInfo>.Failure("Elevator not found.");
-
-            var elevator = elevatorResponse;
-            var availableSpace = elevator.Capacity - elevator.CurrentLoad;
-
             if (availableSpace > 0)
             {
-                var partialRequest = new ElevatorRequest
+                ElevatorRequest partialRequest = new()
                 {
                     Id = request.Id,
                     FromFloor = request.FromFloor,
@@ -177,23 +168,38 @@ internal sealed class ElevatorService : IElevatorService
                     Direction = request.Direction
                 };
 
-                ElevatorInfo optimalElevator = new ElevatorInfo(
-                    elevator.Id,
-                    elevator.Capacity,
-                    elevator.CurrentLoad,
-                    elevator.CurrentFloor,
-                    elevator.Status,
-                    elevator.Direction
+                ElevatorInfo elevatorInfo = new(
+                    optimalElevator.Id,
+                    optimalElevator.CurrentLoad,
+                    optimalElevator.CurrentFloor,
+                    optimalElevator.Status,
+                    optimalElevator.Direction
 
                 );
 
-                elevator.CurrentLoad += partialRequest.PeopleCount;
-                await UpdateElevatorQueue(optimalElevator, partialRequest);
-                await _elevatorStateManager.UpdateElevatorState(elevatorId, optimalElevator);
+                elevatorInfo.UpdateCurrentLoad(optimalElevator.CurrentLoad + partialRequest.PeopleCount);
+                elevatorInfo.EnqueueRequest(partialRequest);
 
-                return Response<ElevatorInfo>.Success("Partial load handled successfully.", optimalElevator);
+                var elevator = _mapper.Map<Elevator>(elevatorInfo);
+                await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+                await _unitOfWork.CompleteAsync();
+
+                ElevatorRequest remainingRequest = new()
+                {
+                    Id = request.Id,
+                    FromFloor = request.FromFloor,
+                    ToFloor = request.ToFloor,
+                    PeopleCount = request.PeopleCount - partialRequest.PeopleCount,
+                    Direction = request.Direction
+                };
+
+                await _floorService.RequeuePartialRequestToFloorQueue(remainingRequest); // Add to overflow queue
+                await _elevatorStateManager.BroadcastStateAsync(elevator.Id, elevatorInfo);
+
+                return Response<ElevatorInfo>.Success("Partial load handled successfully.", elevatorInfo);
             }
-            return Response<ElevatorInfo>.Failure("No space available for partial load.");
+
+            return Response<ElevatorInfo>.Failure("Partial load failed.");
         }
         catch (Exception)
         {
@@ -212,30 +218,32 @@ internal sealed class ElevatorService : IElevatorService
             if (elevatorResponse == null)
                 return Response<ElevatorInfo>.Failure($"Elevator {elevatorId} not found or unavailable.");
 
-            var elevator = elevatorResponse;
-
-            ElevatorInfo optimalElevator = new ElevatorInfo(
-                    elevator.Id,
-                    elevator.Capacity,
-                    elevator.CurrentLoad,
-                    elevator.CurrentFloor,
-                    elevator.Status,
-                    elevator.Direction
+            var availableSpace = elevatorResponse.Capacity - elevatorResponse.CurrentLoad;
+            if (request.PeopleCount <= availableSpace)
+            {
+                ElevatorInfo optimalElevator = new ElevatorInfo(
+                    elevatorResponse.Id,
+                    elevatorResponse.CurrentLoad,
+                    elevatorResponse.CurrentFloor,
+                    elevatorResponse.Status,
+                    elevatorResponse.Direction
 
                 );
 
-            if (elevator.CurrentLoad + request.PeopleCount <= elevator.Capacity)
-            {
-                elevator.CurrentLoad += request.PeopleCount;
-                await UpdateElevatorQueue(optimalElevator, request); // Queue this destination for service.
-                await _elevatorStateManager.UpdateElevatorState(elevatorId, optimalElevator);
+                optimalElevator.UpdateCurrentLoad(optimalElevator.CurrentLoad + request.PeopleCount);
+                optimalElevator.EnqueueRequest(request);
+
+                var elevator = _mapper.Map<Elevator>(optimalElevator);
+                await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+                await _unitOfWork.CompleteAsync();
+
+                await _elevatorStateManager.BroadcastStateAsync(elevator.Id, optimalElevator);
 
                 return Response<ElevatorInfo>.Success("Passengers loaded successfully.", optimalElevator);
             }
-            else
-            {
-                return Response<ElevatorInfo>.Failure("Elevator capacity exceeded.");
-            }
+
+            return await HandlePartialLoad(elevatorResponse, request, availableSpace);
+
         }
         catch (Exception)
         {
@@ -254,20 +262,26 @@ internal sealed class ElevatorService : IElevatorService
             if (elevatorResponse == null)
                 return Response<ElevatorInfo>.Failure($"Elevator {elevatorId} not found or unavailable.");
 
-            var elevator = elevatorResponse;
-            elevator.CurrentLoad = Math.Max(0, elevator.CurrentLoad - request.PeopleCount);
+            elevatorResponse.CurrentLoad = Math.Max(0, elevatorResponse.CurrentLoad - request.PeopleCount);
 
             ElevatorInfo optimalElevator = new ElevatorInfo(
-                    elevator.Id,
-                    elevator.Capacity,
-                    elevator.CurrentLoad,
-                    elevator.CurrentFloor,
-                    elevator.Status,
-                    elevator.Direction
+                    elevatorResponse.Id,
+                    elevatorResponse.CurrentLoad,
+                    elevatorResponse.CurrentFloor,
+                    elevatorResponse.Status,
+                    elevatorResponse.Direction
 
                 );
 
-            await _elevatorStateManager.UpdateElevatorState(elevatorId, optimalElevator);
+            optimalElevator.UpdateCurrentLoad(optimalElevator.CurrentLoad + request.PeopleCount);
+            optimalElevator.EnqueueRequest(request);
+
+            var elevator = _mapper.Map<Elevator>(optimalElevator);
+            await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+            await _unitOfWork.CompleteAsync();
+
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, optimalElevator);
+
             return Response<ElevatorInfo>.Success("Passengers offloaded successfully.", optimalElevator);
         }
         catch (Exception)
@@ -279,36 +293,41 @@ internal sealed class ElevatorService : IElevatorService
     /// <summary>
     /// Resets the specified elevator to its default state.
     /// </summary>
-    public async Task<Response<ElevatorInfo>> ResetElevator(int elevatorId, ElevatorInfo elevator)
+    public async Task<Response<ElevatorInfo>> ResetElevator(int elevatorId, ElevatorInfo elevatorInfo)
     {
         try
         {
-            elevator = new ElevatorInfo(
-                    elevator.Id,
-                    elevator.Capacity,
+            elevatorInfo = new ElevatorInfo(
+                    elevatorInfo.Id,
                     0,
                     0,
                     ElevatorStatus.Idle,
-                    ElevatorDirection.Idle
+                    ElevatorDirection.Idle,
+                    []
 
                 );
 
-            await _elevatorStateManager.UpdateElevatorState(elevatorId, elevator);
-            return Response<ElevatorInfo>.Success("Elevator reset successfully.", elevator);
+            var elevator = _mapper.Map<Elevator>(elevatorInfo);
+            await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+            await _unitOfWork.CompleteAsync();
+
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, elevatorInfo);
+
+            return Response<ElevatorInfo>.Success("Elevator reset successfully.", elevatorInfo);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return Response<ElevatorInfo>.Failure("Error resetting elevator.", null, ex);
+            throw;
         }
     }
 
-    /// <summary>
-    /// Updates the elevator queue with a new request destination.
-    /// </summary>
-    public async Task UpdateElevatorQueue(ElevatorInfo elevator, ElevatorRequest request)
-    {
-        await _elevatorStateManager.AddRequestToQueue(elevator.Id, request);
-    }
+    
+
+    #region Private Methods
+
+
+
+    #endregion
 
 
 }

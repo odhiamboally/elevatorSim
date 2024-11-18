@@ -6,18 +6,58 @@ namespace ES.Application.Dtos.Elevator;
 
 public record ElevatorInfo
 {
-    public int Id { get; private set; } = RequestIdGenerator.GetElevatorNextId();
-    public int Capacity { get; } = 10;
-    public int CurrentLoad { get; private set; }
-    public int CurrentFloor { get; private set; }
-    public ElevatorStatus Status { get; private set; }
-    public ElevatorDirection Direction { get; private set; }
+    private readonly object _lock = new();
+    private const int MaxCapacity = 10;
+    public int Id { get; init; }
+
+    public int Capacity => MaxCapacity;
+
+    // Private fields for mutable properties
+    private int _currentLoad;
+    private int _currentFloor;
+    private int _status; // Internally store the status as an int (enum)
+    private int _direction; // Internally store the direction as an int (enum)
+
+
+    public int CurrentLoad
+    {
+        get => _currentLoad;
+        private set => _currentLoad = Math.Clamp(value, 0, MaxCapacity);
+    }
+
+    public int CurrentFloor
+    {
+        get => _currentFloor;
+        private set => _currentFloor = value;
+    }
+
+    public ElevatorStatus Status
+    {
+        get => (ElevatorStatus)_status;
+        private set => _status = (int)value;
+    }
+
+    public ElevatorDirection Direction
+    {
+        get => (ElevatorDirection)_direction;
+        private set => _direction = (int)value;
+    }
+
     public Queue<ElevatorRequest> RequestQueue { get; private set; } = [];
 
-    public ElevatorInfo(int id, int capacity, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction)
+    public ElevatorInfo(int id, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction, Queue<ElevatorRequest> requestQueue)
     {
         Id = id;
-        Capacity = capacity;
+        CurrentLoad = currentLoad;
+        CurrentFloor = currentFloor;
+        Status = status;
+        Direction = direction;
+        RequestQueue = requestQueue;
+    }
+
+    public ElevatorInfo(int id, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction)
+    {
+        Id = id;
         CurrentLoad = currentLoad;
         CurrentFloor = currentFloor;
         Status = status;
@@ -29,14 +69,66 @@ public record ElevatorInfo
     #region Mutable Methods
 
     // Update methods encapsulate logic and enforce rules
-    public void UpdateId(int newId) => Id = newId;
-    public void UpdateCurrentLoad(int load) => CurrentLoad = Math.Clamp(load, 0, Capacity);
-    public void UpdateCurrentFloor(int floor) => CurrentFloor = floor;
-    public void UpdateStatus(ElevatorStatus status) => Status = status;
-    public void UpdateDirection(ElevatorDirection direction) => Direction = direction;
 
-    public void EnqueueRequest(ElevatorRequest request) => RequestQueue.Enqueue(request);
-    public void DequeueRequest() => RequestQueue.TryDequeue(out _);
+    /// <summary>
+    /// Updates the current load of the elevator, clamping the value within valid bounds.
+    /// </summary>
+    /// <param name="newLoad">The new load to set.</param>
+    public void UpdateCurrentLoad(int newLoad) 
+    {
+        newLoad = Math.Clamp(newLoad, 0, MaxCapacity);
+        Interlocked.Exchange(ref _currentLoad, newLoad);
+    }
+
+    /// <summary>
+    /// Updates the current floor of the elevator.
+    /// </summary>
+    /// <param name="newFloor">The new floor to set.</param>
+    public void UpdateCurrentFloor(int newFloor) 
+    {
+        Interlocked.Exchange(ref _currentFloor, newFloor);
+    }
+
+    /// <summary>
+    /// Updates the status of the elevator.
+    /// </summary>
+    /// <param name="newStatus">The new status to set.</param>
+    public void UpdateStatus(ElevatorStatus newStatus)
+    { 
+        Interlocked.Exchange(ref _status, (int)newStatus); 
+    }
+
+    /// <summary>
+    /// Updates the direction of the elevator.
+    /// </summary>
+    /// <param name="newDirection">The new direction to set.</param>
+    public void UpdateDirection(ElevatorDirection newDirection)
+    { 
+        Interlocked.Exchange(ref _direction, (int)newDirection); 
+    }
+
+    /// <summary>
+    /// Enqueues a request to the elevator's request queue.
+    /// </summary>
+    /// <param name="request">The request to enqueue.</param>
+    public void EnqueueRequest(ElevatorRequest request)
+    {
+        lock (_lock)
+        {
+            RequestQueue.Enqueue(request);
+        }
+    }
+
+    /// <summary>
+    /// Dequeues a request from the elevator's request queue.
+    /// </summary>
+    public void DequeueRequest() 
+    {
+        lock (_lock)
+        {
+            RequestQueue.TryDequeue(out _);
+        }
+    }
 
     #endregion
 

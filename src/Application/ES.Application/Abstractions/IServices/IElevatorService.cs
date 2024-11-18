@@ -28,20 +28,13 @@ public interface IElevatorService
     Task<Response<ElevatorInfo>> FindNearestElevator(ElevatorRequest request);
 
     /// <summary>
-    /// Retrieves the current status of the specified elevator, including its location, direction, occupancy, and any active requests.
-    /// </summary>
-    /// <param name="elevatorId">The unique identifier of the elevator whose status is being retrieved.</param>
-    /// <returns>A response containing the current ElevatorInfo if the elevator is found, or a failure response if the elevator is unavailable.</returns>
-    Task<Response<ElevatorInfo>> GetElevatorStatus(int elevatorId);
-
-    /// <summary>
     /// Handles cases where only a portion of the requested load can be accommodated (e.g., capacity constraints).
     /// Adds remaining passengers back to the floor queue as a partial request.
     /// </summary>
     /// <param name="elevatorId">The unique identifier of the elevator.</param>
     /// <param name="request">The partial load request that couldn't be fully accommodated.</param>
     /// <returns>Response containing the updated ElevatorInfo with any remaining load details.</returns>
-    Task<Response<ElevatorInfo>> HandlePartialLoad(int elevatorId, ElevatorRequest request);
+    Task<Response<ElevatorInfo>> HandlePartialLoad(Elevator elevator, ElevatorRequest request, int availableSpace);
 
     /// <summary>
     /// Loads passengers into the elevator. Manages elevator capacity and handles partial loads if capacity is exceeded.
@@ -66,13 +59,5 @@ public interface IElevatorService
     /// <returns>Response containing the reset ElevatorInfo or a failure response if reset fails.</returns>
     Task<Response<ElevatorInfo>> ResetElevator(int elevatorId, ElevatorInfo elevator);
 
-    /// <summary>
-    /// Updates the elevator queue to manage pending requests and the order of service.
-    /// </summary>
-    /// <param name="elevator">The elevator for which the queue is being updated.</param>
-    /// <param name="request">The request to be queued for this elevator.</param>
-    Task UpdateElevatorQueue(ElevatorInfo elevator, ElevatorRequest request);
-
-    
 
 }
