@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -17,19 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="2.5.187" />
-    <PackageReference Include="MessagePack.Annotations" Version="2.5.187" />
-    <PackageReference Include="MessagePack.AspNetCoreMvcFormatter" Version="2.5.187" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
-    <PackageReference Include="Quartz" Version="3.13.0" />
-    <PackageReference Include="Refit" Version="7.2.1" />
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="MessagePack" Version="2.5.192" />
+    <PackageReference Include="MessagePack.Annotations" Version="2.5.192" />
+    <PackageReference Include="MessagePack.AspNetCoreMvcFormatter" Version="2.5.192" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Quartz" Version="3.13.1" />
+    <PackageReference Include="Refit" Version="8.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Domain\ES.Domain\ES.Domain.csproj" />
-    <ProjectReference Include="..\..\Shared\ES.Shared\ES.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

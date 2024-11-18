@@ -59,14 +59,11 @@ public class ElevatorController : ControllerBase
         var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(request);
         if (!serviceResponse.Successful)
         {
-            if (serviceResponse.Exception is NoContentException || serviceResponse.Data == null)
+            if (serviceResponse.Exception is NoContentException)
                 return NoContent();
 
             return BadRequest(serviceResponse);
         }
-
-        if (serviceResponse.Data == null)
-            return NoContent();
 
         return Ok(serviceResponse.Data);
     }

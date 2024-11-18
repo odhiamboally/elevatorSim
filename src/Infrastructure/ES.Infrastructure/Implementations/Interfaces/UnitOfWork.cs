@@ -7,11 +7,11 @@ public class UnitOfWork : IUnitOfWork
 {
     public ILogRepository LogRepository { get; private set; }
 
-    private readonly DbContext _context;
+    private readonly DBContext _context;
 
     public UnitOfWork(
         ILogRepository logRepository,
-        DbContext context)
+        DBContext context)
     {
         LogRepository = logRepository;
         _context = context;

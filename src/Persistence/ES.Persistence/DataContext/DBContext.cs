@@ -3,19 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using ES.Domain.Entities;
 
 namespace ES.Persistence.DataContext;
-public class DbContext : Microsoft.EntityFrameworkCore.DbContext
+
+public class DBContext : DbContext
 {
-    public DbContext(DbContextOptions<DbContext> options) : base(options)
+    public DBContext(DbContextOptions<DBContext> options) : base(options)
     {
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(DbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(DBContext).Assembly);
     }
 
-    public DbSet<Account> Accounts { get; set; }
-    public DbSet<Log> Logs { get; set; }
+    public DbSet<Log>? Logs { get; set; }
 
 
 }
