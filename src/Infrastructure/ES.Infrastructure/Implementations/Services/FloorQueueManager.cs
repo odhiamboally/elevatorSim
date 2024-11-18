@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using ES.Application.Abstractions.IServices;
 
 namespace ES.Infrastructure.Implementations.Services;
+
+
 internal sealed class FloorQueueManager : IFloorQueueManager
 {
     public FloorQueueManager()

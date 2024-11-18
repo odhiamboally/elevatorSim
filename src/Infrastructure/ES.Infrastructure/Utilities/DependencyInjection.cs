@@ -13,7 +13,7 @@ using ES.Infrastructure.Implementations.Interfaces;
 using ES.Infrastructure.Implementations.Repositories;
 using ES.Infrastructure.Implementations.Services;
 using Refit;
-using DbContext = ES.Persistence.DataContext.DbContext;
+using DbContext = ES.Persistence.DataContext.DBContext;
 using ES.Application.Abstractions.Hubs;
 using ES.Infrastructure.Implementations.Hubs;
 

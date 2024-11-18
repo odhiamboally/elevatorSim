@@ -86,10 +86,10 @@
                     <span class="floor-label">Floor @i</span>
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-success btn-sm" @onclick="() => OpenRequestForm(i, 'Up')">Up</button>
+                    <button class="btn btn-success btn-sm" @onclick="() => OpenRequestForm(i, 1)">Up</button>
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-danger btn-sm" @onclick="() => OpenRequestForm(i, 'Down')">Down</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => OpenRequestForm(i, 2)">Down</button>
                 </div>
             </div>
         }
@@ -115,6 +115,8 @@
     private int CurrentFloor;
     private string? Status;
     private int Direction;
+
+    private bool isFormVisible = false;
 
     private ElevatorRequest? elevatorRequest;
     private ElevatorInfo? elevatorInfo;
@@ -143,23 +145,6 @@
         await SignalRService.StartAsync();
     }
 
-    private void OnElevatorStateReceived(int elevatorId, ElevatorInfo info)
-    {
-        // Add new state to the list (or update existing state based on the elevatorId)
-        var existingElevator = elevatorStates.FirstOrDefault(e => e.Id == elevatorId);
-        if (existingElevator != null)
-        {
-            var index = elevatorStates.IndexOf(existingElevator);
-            elevatorStates[index] = info;  
-        }
-        else
-        {
-            elevatorStates.Add(info); // Add new elevator state
-        }
-
-        StateHasChanged(); // Refresh the UI
-    }
-
     private async Task LoadElevatorStatesAsync()
     {
         try
@@ -177,6 +162,23 @@
 
             throw;
         }
+    }
+
+    private void OnElevatorStateReceived(int elevatorId, ElevatorInfo info)
+    {
+        // Add new state to the list (or update existing state based on the elevatorId)
+        var existingElevator = elevatorStates.FirstOrDefault(e => e.Id == elevatorId);
+        if (existingElevator != null)
+        {
+            var index = elevatorStates.IndexOf(existingElevator);
+            elevatorStates[index] = info;  
+        }
+        else
+        {
+            elevatorStates.Add(info); // Add new elevator state
+        }
+
+        StateHasChanged(); // Refresh the UI
     }
 
     private async Task<ElevatorInfo> HandleValidSubmit(EditContext context)
@@ -201,7 +203,6 @@
             var elevatorInfo = await ApiClient.RequestElevator(elevatorRequest, apiEndPoint);
 
             // Simulate Waiting - Here we just need to do UI waiting, not updating elevator status
-            elevatorStates[elevatorInfo.Id].UpdateStatus() = "Waiting...";
             await Task.Delay(2000);
 
             // Simulate Loading
@@ -259,6 +260,13 @@
         {
             throw;
         }
+    }
+
+    // Opens the form and sets the current floor and direction
+    private void OpenRequestForm(int floor, int direction)
+    {
+        elevatorRequest = new ElevatorRequest(floor, ToFloor, PeopleCount, direction);
+        isFormVisible = true;
     }
 
     // protected override async Task OnInitializedAsync()

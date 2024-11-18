@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork
     public UnitOfWork(
         ILogRepository logRepository,
         IElevatorRepository elevatorRepository,
-        DbContext context)
+        DBContext context)
     {
         LogRepository = logRepository;
         ElevatorRepository = elevatorRepository;
