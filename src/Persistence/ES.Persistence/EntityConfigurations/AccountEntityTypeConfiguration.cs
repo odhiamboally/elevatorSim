@@ -1,22 +1,21 @@
+using ES.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ES.Persistence.EntityConfigurations;
-internal sealed class AccountEntityTypeConfiguration : IEntityTypeConfiguration<Account>
+internal sealed class AccountEntityTypeConfiguration : IEntityTypeConfiguration<Elevator>
 {
-    public void Configure(EntityTypeBuilder<Account> builder)
+    public void Configure(EntityTypeBuilder<Elevator> builder)
     {
         builder
-            .Property(e => e.AccountName)
+            .Property(e => e.Capacity)
             .IsRequired();
 
         builder
-            .Property(e => e.AccountNumber)
+            .Property(e => e.Status)
             .IsRequired();
 
-        builder
-            .Property(e => e.AccountBic)
-            .IsRequired();
 
     }
 }

@@ -6,14 +6,17 @@ namespace ES.Infrastructure.Implementations.Interfaces;
 public class UnitOfWork : IUnitOfWork
 {
     public ILogRepository LogRepository { get; private set; }
+    public IElevatorRepository ElevatorRepository { get; private set; }
 
     private readonly DBContext _context;
 
     public UnitOfWork(
         ILogRepository logRepository,
-        DBContext context)
+        IElevatorRepository elevatorRepository,
+        DbContext context)
     {
         LogRepository = logRepository;
+        ElevatorRepository = elevatorRepository;
         _context = context;
     }
 

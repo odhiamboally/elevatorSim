@@ -1,11 +1,18 @@
-﻿using ES.Application.Abstractions.ICommands;
+﻿
+using AutoMapper;
+
+using ES.Application.Abstractions.ICommands;
+using ES.Application.Abstractions.Interfaces;
 using ES.Application.Abstractions.IServices;
 using ES.Application.Dtos.Common;
 using ES.Application.Dtos.Elevator;
 using ES.Domain.Entities;
 using ES.Domain.Enums;
 using ES.Infrastructure.Implementations.Commands;
+using ES.Infrastructure.Implementations.Interfaces;
 using ES.Shared.Exceptions;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -13,47 +20,40 @@ namespace ES.Infrastructure.Implementations.Services;
 internal sealed class ElevatorService : IElevatorService
 {
     private readonly IConfiguration _config;
+    private readonly IFloorService _floorService;
+    private readonly IElevatorStateManager _elevatorStateManager;
+    private readonly IFloorQueueManager _floorQueueManager;
 
-    public ElevatorService(IConfiguration config)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public ElevatorService(
+        IConfiguration config, 
+        IFloorService floorService, 
+        IElevatorStateManager elevatorStateManager, 
+        IFloorQueueManager floorQueueManager,
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _config = config;
-
+        _floorService = floorService;
+        _elevatorStateManager = elevatorStateManager;
+        _floorQueueManager = floorQueueManager;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        
     }
 
-    public async Task<Response<bool>> DispatchElevator(ElevatorRequest request)
+
+
+    /// <summary>
+    /// Checks and processes the queues for all floors, ensuring each request is managed.
+    /// </summary>
+    public async Task CheckAndProcessPassengerQueues()
     {
         try
         {
-            IElevatorCommand command = null!;
-            switch (request.Direction)
-            {
-                case Direction.Up:
-                    command = new MoveUpCommand();
-                    await Dispatch(request, command);
-
-                    break;
-
-                case Direction.Down:
-                    command = new MoveDownCommand();
-                    await Dispatch(request, command);
-
-                    break;
-
-                case Direction.Idle:
-                    command = new ResetCommand();
-                    await Dispatch(request, command);
-
-                    break;
-
-                default:
-                    command = new ResetCommand();
-                    await Dispatch(request, command);
-
-                    break;
-
-            }
-
-            return Response<bool>.Success("", true);
+            await _floorQueueManager.ProcessAllFloorQueues();
         }
         catch (Exception)
         {
@@ -62,88 +62,272 @@ internal sealed class ElevatorService : IElevatorService
         }
     }
 
+    /// <summary>
+    /// Dispatches the elevator to move to its next destination.
+    /// </summary>
+    public async Task<Response<bool>> DispatchElevator(int elevatorId, ElevatorRequest request)
+    {
+        try
+        {
+            var elevatorForDispatch = await _unitOfWork.ElevatorRepository.FindByIdAsync(elevatorId);
+            if (elevatorForDispatch == null)
+                return Response<bool>.Failure("Elevator not found.");
+
+            ElevatorInfo optimalElevator = new (
+                elevatorForDispatch.Id,
+                elevatorForDispatch.CurrentLoad,
+                elevatorForDispatch.CurrentFloor,
+                elevatorForDispatch.Status,
+                elevatorForDispatch.Direction
+
+            );
+
+            // Update the elevator state directly using encapsulated methods
+            optimalElevator.UpdateStatus(ElevatorStatus.Moving);
+            optimalElevator.UpdateDirection(optimalElevator.CurrentFloor < request.ToFloor ? ElevatorDirection.Up : ElevatorDirection.Down);
+            optimalElevator.EnqueueRequest(request);
+
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, optimalElevator);
+
+            return Response<bool>.Success("Elevator dispatched successfully.", true);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Finds the nearest available elevator that can service a specific request.
+    /// </summary>
     public async Task<Response<ElevatorInfo>> FindNearestElevator(ElevatorRequest request)
     {
         try
         {
-            // Choose the closest elevator that is idle or moving towards the request's direction and can load
+            // Fetch all elevator states
+            var elevators = await _unitOfWork.ElevatorRepository.FindAll().ToListAsync();
 
-            // I think we need to get elevators from where they are maintained.
+            if (elevators == null || !elevators.Any())
+                return Response<ElevatorInfo>.Failure("No available elevator found.");
 
-            var nearestElevator = _elevators
-                .Where(elevator => elevator.Status == Status.Idle || elevator.Direction == request.Direction)
-                .OrderBy(elevator => Math.Abs(elevator.CurrentFloor - request.RequestedFloor))
+            var elevator = elevators
+                .Where(e => e.Status != ElevatorStatus.OutOfService)
+                .OrderBy(e => e.Status == ElevatorStatus.Idle ? 0 : 1) // Prefer idle elevators
+                .ThenBy(e => e.CurrentFloor == request.FromFloor ? 0 : 1) // Prefer elevators on the same floor
+                .ThenBy(e =>
+                    // Prefer elevators moving in the same direction as the request
+                    (e.Direction == request.Direction &&
+                     ((request.Direction == ElevatorDirection.Up && e.CurrentFloor < request.ToFloor) ||
+                      (request.Direction == ElevatorDirection.Down && e.CurrentFloor > request.ToFloor)))
+                        ? 0 : 1)
+                .ThenBy(e =>
+                    // Handle edge cases: idle elevators or elevators in the opposite direction but close to the FromFloor
+                    e.Direction == ElevatorDirection.Idle ||
+                    (e.Direction != request.Direction && Math.Abs(e.CurrentFloor - request.FromFloor) < 3) ? 0 : 1)
+                .ThenBy(e => Math.Abs(e.CurrentFloor - request.FromFloor)) // Prioritize by closest distance
+                .ThenBy(e => (e.CurrentLoad / (double)e.Capacity) >= 1 ? 1 : 0) // Deprioritize full elevators
+                .ThenBy(e => e.CurrentLoad / (double)e.Capacity) // Prefer elevators with more capacity available
                 .FirstOrDefault();
 
-            if (nearestElevator == null)
-            {
-                Response<ElevatorInfo>.Failure("");
+            if (elevator == null)
+                return Response<ElevatorInfo>.Failure("No available elevator found.");
 
-            }
+            ElevatorInfo optimalElevator = new ElevatorInfo(
+                elevator.Id,
+                elevator.CurrentLoad,
+                elevator.CurrentFloor,
+                elevator.Status,
+                elevator.Direction
 
-            // Queue the floor request for the elevator
+            );
 
-
-
-            //Dispatch Elevator
-            await DispatchElevator(request);
-
-
-            return Response<ElevatorInfo>.Success("", nearestElevator);
+            return Response<ElevatorInfo>.Success("Nearest elevator found", optimalElevator!);
+                
         }
         catch (Exception)
         {
-
             throw;
         }
     }
 
-    public Task<Response<ElevatorInfo>> LoadElevator(ElevatorRequest request)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Response<ElevatorInfo>> OffLoadElevator(ElevatorRequest request)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Response<ElevatorInfo>> ResetElevator(ElevatorInfo elevator)
-    {
-        throw new NotImplementedException();
-    }
-
-    private async Task<bool> Dispatch(ElevatorRequest request, IElevatorCommand command) 
+    /// <summary>
+    /// Handles a partial load scenario when only part of a request can be loaded due to capacity limits.
+    /// </summary>
+    public async Task<Response<ElevatorInfo>> HandlePartialLoad(Elevator optimalElevator, ElevatorRequest request, int availableSpace)
     {
         try
         {
-            await command.ExecuteAsync();
-            return true;
+            if (availableSpace > 0)
+            {
+                ElevatorRequest partialRequest = new()
+                {
+                    Id = request.Id,
+                    FromFloor = request.FromFloor,
+                    ToFloor = request.ToFloor,
+                    PeopleCount = Math.Min(request.PeopleCount, availableSpace),
+                    Direction = request.Direction
+                };
+
+                ElevatorInfo elevatorInfo = new(
+                    optimalElevator.Id,
+                    optimalElevator.CurrentLoad,
+                    optimalElevator.CurrentFloor,
+                    optimalElevator.Status,
+                    optimalElevator.Direction
+
+                );
+
+                elevatorInfo.UpdateCurrentLoad(optimalElevator.CurrentLoad + partialRequest.PeopleCount);
+                elevatorInfo.EnqueueRequest(partialRequest);
+
+                var elevator = _mapper.Map<Elevator>(elevatorInfo);
+                await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+                await _unitOfWork.CompleteAsync();
+
+                ElevatorRequest remainingRequest = new()
+                {
+                    Id = request.Id,
+                    FromFloor = request.FromFloor,
+                    ToFloor = request.ToFloor,
+                    PeopleCount = request.PeopleCount - partialRequest.PeopleCount,
+                    Direction = request.Direction
+                };
+
+                await _floorService.RequeuePartialRequestToFloorQueue(remainingRequest); // Add to overflow queue
+                await _elevatorStateManager.BroadcastStateAsync(elevator.Id, elevatorInfo);
+
+                return Response<ElevatorInfo>.Success("Partial load handled successfully.", elevatorInfo);
+            }
+
+            return Response<ElevatorInfo>.Failure("Partial load failed.");
         }
         catch (Exception)
         {
-
             throw;
         }
     }
 
-    private (bool, int) CanLoad(ElevatorRequest request)
+    /// <summary>
+    /// Loads passengers into the specified elevator, adjusting load and floor queue as necessary.
+    /// </summary>
+    public async Task<Response<ElevatorInfo>> LoadElevator(int elevatorId, ElevatorRequest request)
     {
-        if (request.PeopleCount >= int.Parse(_config["Elevator:Capacity"]!))
+        try
         {
-            return (false, 0); ;
+            var elevatorResponse = await _unitOfWork.ElevatorRepository.FindByIdAsync(elevatorId);
+            if (elevatorResponse == null)
+                return Response<ElevatorInfo>.Failure($"Elevator {elevatorId} not found or unavailable.");
+
+            var availableSpace = elevatorResponse.Capacity - elevatorResponse.CurrentLoad;
+            if (request.PeopleCount <= availableSpace)
+            {
+                ElevatorInfo optimalElevator = new ElevatorInfo(
+                    elevatorResponse.Id,
+                    elevatorResponse.CurrentLoad,
+                    elevatorResponse.CurrentFloor,
+                    elevatorResponse.Status,
+                    elevatorResponse.Direction
+
+                );
+
+                optimalElevator.UpdateCurrentLoad(optimalElevator.CurrentLoad + request.PeopleCount);
+                optimalElevator.EnqueueRequest(request);
+
+                var elevator = _mapper.Map<Elevator>(optimalElevator);
+                await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+                await _unitOfWork.CompleteAsync();
+
+                await _elevatorStateManager.BroadcastStateAsync(elevator.Id, optimalElevator);
+
+                return Response<ElevatorInfo>.Success("Passengers loaded successfully.", optimalElevator);
+            }
+
+            return await HandlePartialLoad(elevatorResponse, request, availableSpace);
 
         }
-
-        return (true, (int.Parse(_config["Elevator:Capacity"]!) - request.PeopleCount));
+        catch (Exception)
+        {
+            throw;
+        }
     }
 
-    private void Load(ElevatorRequest request)
+    /// <summary>
+    /// Offloads passengers from the specified elevator and updates its state.
+    /// </summary>
+    public async Task<Response<ElevatorInfo>> OffLoadElevator(int elevatorId, ElevatorRequest request)
     {
-        if (!CanLoad(request).Item1)
-            throw new FullCapacityException("Elevator is at full capacity.");
+        try
+        {
+            var elevatorResponse = await _unitOfWork.ElevatorRepository.FindByIdAsync(elevatorId);
+            if (elevatorResponse == null)
+                return Response<ElevatorInfo>.Failure($"Elevator {elevatorId} not found or unavailable.");
 
-        //Load nearest elevator that was found for the request
+            elevatorResponse.CurrentLoad = Math.Max(0, elevatorResponse.CurrentLoad - request.PeopleCount);
+
+            ElevatorInfo optimalElevator = new ElevatorInfo(
+                    elevatorResponse.Id,
+                    elevatorResponse.CurrentLoad,
+                    elevatorResponse.CurrentFloor,
+                    elevatorResponse.Status,
+                    elevatorResponse.Direction
+
+                );
+
+            optimalElevator.UpdateCurrentLoad(optimalElevator.CurrentLoad + request.PeopleCount);
+            optimalElevator.EnqueueRequest(request);
+
+            var elevator = _mapper.Map<Elevator>(optimalElevator);
+            await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+            await _unitOfWork.CompleteAsync();
+
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, optimalElevator);
+
+            return Response<ElevatorInfo>.Success("Passengers offloaded successfully.", optimalElevator);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
+
+    /// <summary>
+    /// Resets the specified elevator to its default state.
+    /// </summary>
+    public async Task<Response<ElevatorInfo>> ResetElevator(int elevatorId, ElevatorInfo elevatorInfo)
+    {
+        try
+        {
+            elevatorInfo = new ElevatorInfo(
+                    elevatorInfo.Id,
+                    0,
+                    0,
+                    ElevatorStatus.Idle,
+                    ElevatorDirection.Idle,
+                    []
+
+                );
+
+            var elevator = _mapper.Map<Elevator>(elevatorInfo);
+            await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+            await _unitOfWork.CompleteAsync();
+
+            await _elevatorStateManager.BroadcastStateAsync(elevatorId, elevatorInfo);
+
+            return Response<ElevatorInfo>.Success("Elevator reset successfully.", elevatorInfo);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    
+
+    #region Private Methods
+
+
+
+    #endregion
+
 
 }

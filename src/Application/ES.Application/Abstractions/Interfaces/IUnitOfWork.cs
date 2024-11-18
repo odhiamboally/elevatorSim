@@ -4,6 +4,7 @@ namespace ES.Application.Abstractions.Interfaces;
 public interface IUnitOfWork
 {
     ILogRepository LogRepository { get; }
+    IElevatorRepository ElevatorRepository { get; }
 
     Task<int> CompleteAsync();
 }

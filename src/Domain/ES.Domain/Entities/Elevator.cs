@@ -5,10 +5,12 @@ namespace ES.Domain.Entities;
 
 public class Elevator
 {
-    public int Id { get; }
-    public int Capacity { get; } = 10;
-    public int CurrentLoad { get; private set; } = 0;
-    public int CurrentFloor { get; private set; } = 0;
-    public Status Status { get; private set; }
-    public Direction Direction { get; private set; }
+    public int Id { get; set; }
+    public int Capacity { get; set; }
+    public int CurrentLoad { get; set; }
+    public int CurrentFloor { get; set; }
+    public ElevatorStatus Status { get; set; }
+    public ElevatorDirection Direction { get; set; }
+    public Queue<int> RequestQueue { get; set; } = [];
+
 }

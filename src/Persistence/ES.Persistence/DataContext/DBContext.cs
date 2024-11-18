@@ -15,7 +15,9 @@ public class DBContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DBContext).Assembly);
     }
 
-    public DbSet<Log>? Logs { get; set; }
+    public DbSet<Elevator> Elevators { get; set; }
+    public DbSet<Floor> Floors { get; set; }
+    public DbSet<Log> Logs { get; set; }
 
 
 }

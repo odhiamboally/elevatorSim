@@ -1,5 +1,7 @@
 ﻿@page "/account"
 @rendermode InteractiveServer
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
 
 
 <PageTitle>Account Info</PageTitle>
@@ -79,6 +81,12 @@
         }
         
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Task.CompletedTask; 
+    }
+
 }
 
 <hr />

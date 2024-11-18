@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="MessagePack" Version="2.5.192" />
     <PackageReference Include="MessagePack.Annotations" Version="2.5.192" />
     <PackageReference Include="MessagePack.AspNetCoreMvcFormatter" Version="2.5.192" />
