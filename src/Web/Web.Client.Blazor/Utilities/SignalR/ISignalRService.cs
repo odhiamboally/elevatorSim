@@ -8,11 +8,13 @@ public interface ISignalRService
     /// Starts the SignalR connection.
     /// </summary>
     Task StartAsync();
+    Task StopAsync();
 
     /// <summary>
     /// Event triggered when an elevator state is received.
     /// </summary>
     event Action<int, ElevatorInfo>? ElevatorStateReceived;
+    event Action<List<KeyValuePair<int, ElevatorInfo>>>? ElevatorStatesReceived;
 
     /// <summary>
     /// Checks if the connection to SignalR is active.

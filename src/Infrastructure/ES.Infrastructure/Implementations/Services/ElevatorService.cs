@@ -177,7 +177,7 @@ internal sealed class ElevatorService : IElevatorService
         try
         {
             // Fetch all elevator states
-            var elevators = await _unitOfWork.ElevatorRepository.FindAll().ToListAsync();
+            var elevators = _unitOfWork.ElevatorRepository.FindAll().ToList();
 
             if (elevators == null || !elevators.Any())
                 return Response<ElevatorInfo>.Failure("No available elevator found.");

@@ -41,7 +41,6 @@ internal sealed class SignalRService : ISignalRService
             ElevatorStatesReceived?.Invoke(states);
         });
 
-
         // Register for lifecycle events
         _hubConnection.Closed += OnClosed;
         _hubConnection.Reconnected += OnReconnected;
@@ -71,5 +70,8 @@ internal sealed class SignalRService : ISignalRService
         return Task.CompletedTask;
     }
 
-
+    public async Task StopAsync()
+    {
+        await _hubConnection.StopAsync();
+    }
 }
