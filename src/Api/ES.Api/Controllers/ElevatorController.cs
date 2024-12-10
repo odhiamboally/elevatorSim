@@ -90,7 +90,7 @@ public class ElevatorController : ControllerBase
 
 
     [HttpPost("findnearest")]
-    [ValidateAntiForgeryToken]
+    //[ValidateAntiForgeryToken]
     public async Task<ActionResult> FindNearestElevator([FromBody] ElevatorRequest request)
     {
         var validator = new ElevatorRequestValidator();
