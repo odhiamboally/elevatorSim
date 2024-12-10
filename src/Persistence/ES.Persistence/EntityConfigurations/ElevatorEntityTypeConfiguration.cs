@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ES.Persistence.EntityConfigurations;
-internal sealed class AccountEntityTypeConfiguration : IEntityTypeConfiguration<Elevator>
+internal sealed class ElevatorEntityTypeConfiguration : IEntityTypeConfiguration<Elevator>
 {
     public void Configure(EntityTypeBuilder<Elevator> builder)
     {

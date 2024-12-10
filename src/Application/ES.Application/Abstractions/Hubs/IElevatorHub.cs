@@ -11,5 +11,6 @@ namespace ES.Application.Abstractions.Hubs;
 
 public interface IElevatorHub
 {
-    Task BroadcastElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo);
+    Task FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo);
+    Task FetchElevatorStatesAsync(List<ElevatorInfo> elevatorStates);
 }

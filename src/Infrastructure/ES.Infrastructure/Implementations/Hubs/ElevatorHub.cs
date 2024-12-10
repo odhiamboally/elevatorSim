@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace ES.Infrastructure.Implementations.Hubs;
 
-internal sealed class ElevatorHub : Hub, IElevatorHub
+public class ElevatorHub : Hub, IElevatorHub
 {
     private readonly IHubContext<ElevatorHub> _hubContext;
 
@@ -23,11 +23,24 @@ internal sealed class ElevatorHub : Hub, IElevatorHub
             
     }
 
-    public async Task BroadcastElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo)
+    public async Task FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo)
     {
         try
         {
             await _hubContext.Clients.All.SendAsync("ReceiveElevatorState", elevatorId, updatedInfo);
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    public async Task FetchElevatorStatesAsync(List<ElevatorInfo> elevatorStates)
+    {
+        try
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveElevatorStates", elevatorStates);
         }
         catch (Exception)
         {

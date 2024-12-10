@@ -43,6 +43,11 @@ public record ElevatorInfo
 
     public Queue<ElevatorRequest> RequestQueue { get; private set; } = [];
 
+    public ElevatorInfo()
+    {
+            
+    }
+
     public ElevatorInfo(int id, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction, Queue<ElevatorRequest> requestQueue)
     {
         Id = id;

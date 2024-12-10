@@ -9,9 +9,9 @@ namespace ES.Infrastructure.Implementations.Commands;
 
 
 
-internal sealed class UnloadPassengerCommand : IElevatorCommand
+internal sealed class OffLoadCommand : IElevatorCommand
 {
-    public UnloadPassengerCommand()
+    public OffLoadCommand()
     {
             
     }

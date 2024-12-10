@@ -73,7 +73,7 @@ internal sealed class ElevatorRepository : IElevatorRepository
         };
         var elevator2 = new Elevator
         {
-            Id = 1,
+            Id = 2,
             Capacity = 10,
             CurrentFloor = 1,
             CurrentLoad = 0,
@@ -82,7 +82,7 @@ internal sealed class ElevatorRepository : IElevatorRepository
         };
         var elevator3 = new Elevator
         {
-            Id = 1,
+            Id = 3,
             Capacity = 10,
             CurrentFloor = 1,
             CurrentLoad = 0,
@@ -91,7 +91,7 @@ internal sealed class ElevatorRepository : IElevatorRepository
         };
         var elevator4 = new Elevator
         {
-            Id = 1,
+            Id = 4,
             Capacity = 10,
             CurrentFloor = 1,
             CurrentLoad = 0,

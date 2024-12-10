@@ -11,7 +11,9 @@ internal sealed class SignalRService : ISignalRService
     private readonly IConfiguration _configuration;
     private readonly ILogger<SignalRService> _logger;
     private readonly HubConnection _hubConnection;
+
     public event Action<int, ElevatorInfo>? ElevatorStateReceived;
+    public event Action<List<KeyValuePair<int, ElevatorInfo>>>? ElevatorStatesReceived;
     public bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
 
     public SignalRService(IConfiguration configuration, NavigationManager navigationManager, ILogger<SignalRService> logger)
@@ -19,16 +21,26 @@ internal sealed class SignalRService : ISignalRService
         _configuration = configuration;
         _logger = logger;
 
+        var hubUrl = navigationManager.ToAbsoluteUri($"{_configuration["AppSettings:ApiBaseUrl"]}{_configuration["AppSettings:EndPoints:Elevator:Hub"]}");
+        var absoluteUri = navigationManager.ToAbsoluteUri($"{hubUrl}");
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(navigationManager
-            .ToAbsoluteUri($"{_configuration["AppSettings:ApiBaseUrl"]}/{_configuration["AppSettings:EndPoints:Elevator:BroadCastState"]}"))
+            .WithUrl(absoluteUri)
             .WithAutomaticReconnect()
             .Build();
+
+        _logger.LogInformation("Hub URL: {HubUrl}", hubUrl);
 
         _hubConnection.On<int, ElevatorInfo>("ReceiveElevatorState", (elevatorId, info) =>
         {
             ElevatorStateReceived?.Invoke(elevatorId, info);
         });
+
+        _hubConnection.On<List<KeyValuePair<int, ElevatorInfo>>>("ReceiveElevatorStates", (states) =>
+        {
+            ElevatorStatesReceived?.Invoke(states);
+        });
+
 
         // Register for lifecycle events
         _hubConnection.Closed += OnClosed;
@@ -40,6 +52,7 @@ internal sealed class SignalRService : ISignalRService
     {
         await _hubConnection.StartAsync();
     }
+
     private Task OnClosed(Exception? exception)
     {
         _logger.LogWarning(exception, "SignalR connection closed.");

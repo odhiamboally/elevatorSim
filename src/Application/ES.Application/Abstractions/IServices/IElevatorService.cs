@@ -7,10 +7,19 @@ namespace ES.Application.Abstractions.IServices;
 
 public interface IElevatorService
 {
+
+    
     /// <summary>
     /// Periodically checks and processes all passenger queues across floors and assigns elevators as needed.
     /// </summary>
     Task CheckAndProcessPassengerQueues();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    Task<Response<bool>> CompleteRequest(CompleteRequest request);
 
     /// <summary>
     /// Dispatches the elevator to the requested floor and initiates movement.
@@ -19,6 +28,14 @@ public interface IElevatorService
     /// <param name="request">The request specifying the destination floor and direction.</param>
     /// <returns>Response indicating whether the dispatch was successful or not.</returns>
     Task<Response<bool>> DispatchElevator(int elevatorId, ElevatorRequest request);
+
+    /// <summary>
+    /// Dispatches the elevator to the requested floor and initiates movement.
+    /// </summary>
+    /// <param name="elevatorId">The unique identifier of the elevator to be dispatched.</param>
+    /// <param name="request">The request specifying the destination floor and direction.</param>
+    /// <returns>Response indicating whether the dispatch was successful or not.</returns>
+    Task<Response<bool>> DispatchElevator(DispatchElevatorRequest request);
 
     /// <summary>
     /// Finds the nearest available elevator for the request.
