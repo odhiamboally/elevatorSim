@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 
+using Confluent.Kafka;
+
 using ES.Application.Abstractions.Hubs;
 using ES.Application.Abstractions.Interfaces;
 using ES.Application.Abstractions.IServices;
@@ -33,11 +35,11 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
         _mapper = mapper;
     }
 
-    public async Task<Response<bool>> BroadcastStateAsync(int elevatorId, ElevatorInfo updatedInfo)
+    public async Task<Response<bool>> FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo)
     {
         try
         {
-            await _elevatorHub.BroadcastElevatorStateAsync(elevatorId, updatedInfo);
+            await _elevatorHub.FetchElevatorStateAsync(elevatorId, updatedInfo);
             return Response<bool>.Success("Broadcast successful.", true);
         }
         catch (Exception)
@@ -47,12 +49,21 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
         }
     }
 
-    public async Task<Response<List<ElevatorInfo>>> GetAllElevatorStatesAsync()
+    public async Task<Response<List<ElevatorInfo>>> FetchElevatorStatesAsync()
     {
         try
         {
-            var elevatorStatesResponse = await _unitOfWork.ElevatorRepository.FindAll().ToListAsync();
-            var elevatorStates = _mapper.Map<List<ElevatorInfo>>(elevatorStatesResponse);
+            var elevatorStatesResponse = _unitOfWork.ElevatorRepository.FindAll().ToList();
+            var elevatorStates = elevatorStatesResponse.Select(e => new ElevatorInfo(
+                e.Id, 
+                e.CurrentFloor, 
+                e.CurrentLoad, 
+                e.Status, 
+                e.Direction
+                ))
+                .ToList();
+
+            await _elevatorHub.FetchElevatorStatesAsync(elevatorStates);
             return Response<List<ElevatorInfo>>.Success("Elevator States:", elevatorStates);
 
         }
@@ -62,4 +73,6 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
             throw;
         }
     }
+
+
 }

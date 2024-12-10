@@ -9,92 +9,130 @@
 <hr />
 
 <div class="row">
-    <div class="col-md-4 my-1">
-        <div class="row">
-            @foreach (var state in elevatorStates)
-            {
-                <div class="col-md-3 my-4">
-                    <div class="card">
-                        <div class="card-header bg-dark text-white font-weight-bold">
-                            Elevator @state.Id
+    <!-- Loading Spinner -->
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Elevator States -->
+        <div class="col-md-12 my-1">
+            <div class="row">
+                @foreach (var state in elevatorStates)
+                {
+                    <div class="col my-4">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white font-weight-bold">
+                                Elevator &nbsp; @state.Id
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Current Floor: @state.CurrentFloor</p>
+                                <p class="card-text">Current Load: @state.CurrentLoad</p>
+                                <p class="card-text">Direction: @state.Direction</p>
+                                <p class="card-text">Status: @state.Status</p>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <p class="card-text">Current Floor: @state.CurrentFloor</p>
-                            <p class="card-text">Current Load: @state.CurrentLoad</p>
-                            <p class="card-text">Direction: @state.Direction</p>
-                            <p class="card-text">Status: @state.Status</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+    }
+
+</div>
+
+<div class="row">
+    <!-- Request Elevator Form -->
+    <div class="col-md-12 my-1">
+        <div class="row">
+            <div class="col my-4">
+                <div class="card m-1">
+                    <div class="card-header bg-black text-white font-weight-bold">
+                        Request Elevator
+                    </div>
+                    <div class="card-body">
+
+                        @if (isFormVisible)
+                        {
+                            <div class="request-form">
+
+                                <EditForm Model="@elevatorRequest" OnValidSubmit="HandleValidSubmit">
+                                    <DataAnnotationsValidator />
+                                    <ValidationSummary />
+
+                                    <div class="mb-3">
+                                        <label for="fromFloor" class="form-label">From Floor</label>
+                                        <InputNumber id="fromFloor"
+                                                     @bind-Value="FromFloor"
+                                                     class="form-control"
+                                                     min="1" max="20" />
+                                    </div>
+
+                                    <div class="mb-3"> 
+                                        <label for="toFloor" class="form-label">To Floor</label>
+                                        <InputNumber id="toFloor"
+                                                     @bind-Value="ToFloor"
+                                                     class="form-control"
+                                                     min="1" max="20" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="peopleCount" class="form-label">Number of Passengers</label>
+                                        <InputNumber id="peopleCount"
+                                                     @bind-Value="PeopleCount"
+                                                     class="form-control" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button type="submit" class="btn btn-primary btn-sm">Request Elevator</button>
+                                    </div>
+                                </EditForm>
+
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row floor-row">
+    <div class="col my-1">
+        <div class="d-flex flex-wrap justify-content-md-between">
+            @for (int i = 1; i <= 20; i++) 
+            {
+                <div class="col-md-3 floor-card mb-2">
+                    <div class="card">
+                        <div class="card-header text-white text-center" style="background-color: #808080;">
+                            Floor @i
+                        </div>
+                        <div class="card-body text-center">
+                            <button class="btn btn-sm text-white me-1" style="background-color: #302626;" @onclick="() => OpenRequestForm(i, 1)">Up</button>
+                            <button class="btn btn-success btn-sm me-1"  @onclick="() => OpenRequestForm(i, 2)">Down</button>
                         </div>
                     </div>
                 </div>
             }
         </div>
     </div>
-    <div class="col-md-4 my-1">
-        <div class="card m-1">
-            <div class="card-header bg-black text-white font-weight-bold">
-                Request Elevator
-            </div>
-            <div class="card-body">
+</div>
 
-                @if (isFormVisible)
-                { 
-                    <div class="request-form">
 
-                        <EditForm Model="@elevatorRequest" OnValidSubmit="HandleValidSubmit">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
-
-                            <div class="mb-3">
-                                <label for="fromFloor" class="form-label">From Floor</label>
-                                <InputNumber id="fromFloor"
-                                @bind-Value="FromFloor"
-                                class="form-control"
-                                min="1" max="20" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="toFloor" class="form-label">To Floor</label>
-                                <InputNumber id="toFloor"
-                                @bind-Value="ToFloor"
-                                class="form-control"
-                                min="1" max="20" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="peopleCount" class="form-label">Number of Passengers</label>
-                                <InputNumber id="peopleCount"
-                                @bind-Value="PeopleCount"
-                                class="form-control" />
-                            </div>
-
-                            <div class="mb-3">
-                                <button type="submit" class="btn btn-primary btn-sm">Request Elevator</button>
-                            </div>
-                        </EditForm>
-
-                    </div>
-                }
-
-            </div>
+<div class="row">
+    <!-- Error Notification -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @errorMessage
         </div>
-    </div>
-    <div class="col-md-4 my-1">
-        @for (int i = 20; i >= 1; i--) // Start from the top floor
-        {
-            <div class="row mb-2">
-                <div class="col-md-2">
-                    <span class="floor-label">Floor @i</span>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-success btn-sm" @onclick="() => OpenRequestForm(i, 1)">Up</button>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-danger btn-sm" @onclick="() => OpenRequestForm(i, 2)">Down</button>
-                </div>
-            </div>
-        }
-    </div>
-
+    }
 </div>
 
 <hr />
@@ -108,7 +146,6 @@
     private int ToFloor;
     private int PeopleCount;
 
-
     private int ElevatorId;
     private int Capacity;
     private int CurrentLoad;
@@ -117,6 +154,8 @@
     private int Direction;
 
     private bool isFormVisible = false;
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
 
     private ElevatorRequest? elevatorRequest;
     private ElevatorInfo? elevatorInfo;
@@ -149,7 +188,7 @@
     {
         try
         {
-            var apiEndPoint = Configuration["AppSettings:EndPoints:Elevator:BroadCastState"];
+            var apiEndPoint = Configuration["AppSettings:EndPoints:Elevator:GetElevatorStates"];
             if (string.IsNullOrEmpty(apiEndPoint))
             {
                 throw new ApiEndPointException("API endpoint is not configured.");
@@ -159,7 +198,6 @@
         }
         catch (Exception)
         {
-
             throw;
         }
     }
@@ -202,7 +240,7 @@
 
             var elevatorInfo = await ApiClient.RequestElevator(elevatorRequest, apiEndPoint);
 
-            // Simulate Waiting - Here we just need to do UI waiting, not updating elevator status
+            // Simulate Waiting - Here we just need to do UI waiting, not updating elevator status - UI indicators
             await Task.Delay(2000);
 
             // Simulate Loading
@@ -258,9 +296,121 @@
         }
         catch (Exception)
         {
+            await JSRuntime.InvokeVoidAsync("Swal.fire", "Error", "An error occurred while processing your request. Please try again.", "error");
             throw;
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
+
+    private async Task<ElevatorInfo> Submit(EditContext context)
+    {
+        try
+        {
+            // Create a new ElevatorRequest from form values
+            elevatorRequest = new ElevatorRequest(FromFloor, ToFloor, PeopleCount, Direction);
+
+            var validator = new ElevatorRequestValidator();
+            var validationResult = validator.Validate(elevatorRequest);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException("Request Object is Invalid", validationResult.Errors);
+            }
+
+            var apiEndPoint = Configuration["AppSettings:EndPoints:Elevator:FindNearest"];
+            if (string.IsNullOrEmpty(apiEndPoint))
+            {
+                throw new ApiEndPointException("API endpoint is not configured.");
+            }
+
+            // Show a loading indicator
+            isFormVisible = false;
+            isLoading = true;
+
+            // Call backend to find the nearest elevator
+            var elevatorInfo = await ApiClient.RequestElevator(elevatorRequest, apiEndPoint);
+            if (elevatorInfo == null)
+            {
+                throw new NotFoundException("All elevators might be busy. Please wait.");
+            }
+
+            // Simulate elevator waiting time
+            elevatorStates[elevatorInfo.Id].UpdateStatus(ElevatorStatus.Waiting);
+            await Task.Delay(2000);
+
+            // Update elevator state to loading
+            elevatorStates[elevatorInfo.Id].UpdateStatus(ElevatorStatus.Loading);
+            await Task.Delay(3000);
+
+            // Update elevator movement
+            var elevatorMovementEndpoint = Configuration["AppSettings:EndPoints:Elevator:Dispatch"];
+            if (string.IsNullOrEmpty(elevatorMovementEndpoint))
+            {
+                throw new ApiEndPointException("API endpoint is not configured.");
+            }
+
+            foreach (var request in elevatorStates[elevatorInfo.Id].RequestQueue)
+            {
+                var targetFloor = request.ToFloor;
+
+                var dispatchElevatorRequest = new DispatchElevatorRequest
+                {
+                    ElevatorRequest = elevatorRequest,
+                    ElevatorInfo = elevatorInfo
+                };
+
+                //await ApiClient.DispatchElevator(elevatorRequest, elevatorMovementEndpoint);
+                await ApiClient.DispatchElevator(dispatchElevatorRequest, elevatorMovementEndpoint);
+
+                while (elevatorStates[elevatorInfo.Id].CurrentFloor != targetFloor)
+                {
+                    // Keep updating the current floor status, simulate delay for movement
+                    var newFloor = elevatorStates[elevatorInfo.Id].CurrentFloor +
+                        (elevatorStates[elevatorInfo.Id].CurrentFloor < targetFloor ? 1 : -1);
+
+                    elevatorStates[elevatorInfo.Id].UpdateCurrentFloor(newFloor);
+                    await Task.Delay(1000); // Simulate time to move 1 floor
+                }
+
+                // Simulate offloading
+                elevatorStates[elevatorInfo.Id].UpdateStatus(ElevatorStatus.OffLoading);
+                await Task.Delay(2000);
+
+                var completeRequestEndpoint = Configuration["AppSettings:EndPoints:Elevator:CompleteRequest"];
+                var completeRequest = new CompleteRequest
+                {
+                    ElevatorInfo = elevatorInfo,
+                    ElevatorRequest = elevatorRequest
+                };
+
+                // Update and remove request from queue
+                await ApiClient.CompleteRequest(completeRequest, completeRequestEndpoint!);
+                
+                // await ApiClient.CompleteRequest(elevatorRequest, apiEndPoint);
+                // elevatorStates[elevatorInfo.Id].DequeueRequest();
+            }
+
+            // Reset elevator status to idle
+            elevatorStates[elevatorInfo.Id] = new ElevatorInfo(0, 0, 0, ElevatorStatus.Idle, ElevatorDirection.Idle, []);
+
+            // Stop loading and return elevator
+            isLoading = false;
+            return elevatorInfo;
+        }
+        catch (Exception)
+        {
+            isLoading = false;
+            await JSRuntime.InvokeVoidAsync("Swal.fire", "Error", "An error occurred while processing your request. Please try again.", "error");
+            throw;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
 
     // Opens the form and sets the current floor and direction
     private void OpenRequestForm(int floor, int direction)

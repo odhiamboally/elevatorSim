@@ -16,6 +16,8 @@ using Refit;
 using DbContext = ES.Persistence.DataContext.DBContext;
 using ES.Application.Abstractions.Hubs;
 using ES.Infrastructure.Implementations.Hubs;
+using ES.Application.Abstractions.ICommands;
+using ES.Infrastructure.Implementations.Commands;
 
 namespace ES.Infrastructure.Utilities;
 public static class DependencyInjection
@@ -24,6 +26,16 @@ public static class DependencyInjection
     {
         var connString = configuration.GetConnectionString("ES");
         services.AddDbContext<DbContext>(options => options.UseSqlServer(connString!));
+
+        var keyedServices = new Dictionary<string, Type>
+        {
+            { "openDoor", typeof(OpenDoorCommand) },
+            { "closeDoor", typeof(CloseDoorCommand) },
+            { "moveUp", typeof(MoveUpCommand) },
+            { "moveDown", typeof(MoveDownCommand) },
+            { "load", typeof(LoadCommand) },
+            { "offLoad", typeof(OffLoadCommand) }
+        };
 
         services.Configure<QuartzOptions>(configuration.GetSection("Quartz"));
 
@@ -55,6 +67,7 @@ public static class DependencyInjection
         //services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         services.AddSignalR();
+        
 
         services.AddScoped<IServiceManager, ServiceManager>();
         services.AddScoped<ILogService, LogService>();
@@ -63,11 +76,23 @@ public static class DependencyInjection
         services.AddScoped<IFloorService, FloorService>();
         services.AddScoped<IFloorQueueManager, FloorQueueManager>();
 
+        services.AddScoped<OpenDoorCommand>();
+        services.AddScoped<CloseDoorCommand>();
+        services.AddScoped<MoveUpCommand>();
+        services.AddScoped<MoveDownCommand>();
+        services.AddScoped<LoadCommand>();
+        services.AddScoped<OffLoadCommand>();
+
+        // Register the resolver
+        services.AddSingleton<IKeyedServiceResolver<string, IElevatorCommand>>(provider => new KeyedServiceResolver<string, IElevatorCommand>(provider, keyedServices));
+
+
         services.AddScoped<IHubManager, HubManager>();
         services.AddScoped<IElevatorHub, ElevatorHub>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+        services.AddScoped<IElevatorRepository, ElevatorRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
 
         return services;

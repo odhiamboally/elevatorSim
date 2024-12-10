@@ -29,13 +29,24 @@ public class ElevatorController : ControllerBase
         if (elevatorInfo == null)
             return BadRequest("Invalid request.");
 
-        var broadCastResponse = await _serviceManager.ElevatorStateManager.BroadcastStateAsync(elevatorInfo.Id, elevatorInfo);
-        return Ok(broadCastResponse);
+        var serviceResponse = await _serviceManager.ElevatorStateManager.FetchElevatorStateAsync(elevatorInfo.Id, elevatorInfo);
+        return Ok(serviceResponse);
+    }
+
+    [HttpPost("completerequest")]
+    [ValidateAntiForgeryToken]
+    public async Task<ActionResult> CompleteRequest([FromBody] CompleteRequest request)
+    {
+        if (request == null)
+            return BadRequest("Invalid request.");
+
+        var serviceResponse = await _serviceManager.ElevatorService.CompleteRequest(request);
+        return Ok(serviceResponse);
     }
 
     [HttpPost("dispatch")]
     [ValidateAntiForgeryToken]
-    public async Task<ActionResult> DispatchElevator([FromBody] ElevatorRequest request, int elevatorId)
+    public async Task<ActionResult> Dispatch([FromBody] ElevatorRequest request, int elevatorId)
     {
         var validator = new ElevatorRequestValidator();
         if (!validator.Validate(request).IsValid)
@@ -44,6 +55,28 @@ public class ElevatorController : ControllerBase
         }
 
         var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(elevatorId, request);
+        if (!serviceResponse.Successful)
+        {
+            if (serviceResponse.Exception is NoContentException || !serviceResponse.Data)
+                return NoContent();
+
+            return BadRequest(serviceResponse);
+        }
+
+        return Ok(serviceResponse.Data);
+    }
+
+    [HttpPost("dispatchelevator")]
+    [ValidateAntiForgeryToken]
+    public async Task<ActionResult> DispatchElevator([FromBody] DispatchElevatorRequest request)
+    {
+        var validator = new DispatchElevatorRequestValidator();
+        if (!validator.Validate(request).IsValid)
+        {
+            throw new ValidationException("Request Object is Invalid", errors: validator.Validate(request).Errors);
+        }
+
+        var serviceResponse = await _serviceManager.ElevatorService.DispatchElevator(request);
         if (!serviceResponse.Successful)
         {
             if (serviceResponse.Exception is NoContentException || !serviceResponse.Data)
@@ -81,11 +114,19 @@ public class ElevatorController : ControllerBase
         return Ok(serviceResponse.Data);
     }
 
+
+    [HttpGet("elevatorstate/{elevatorId:int}")]
+    public async Task<ActionResult<ElevatorInfo>> GetElevatorState(int elevatorId, ElevatorInfo elevatorInfo)
+    {
+        var serviceResponse = await _serviceManager.ElevatorStateManager.FetchElevatorStateAsync(elevatorId, elevatorInfo);
+        return Ok(serviceResponse.Data);
+    }
+
     [HttpGet("elevatorstates")]
     public async Task<ActionResult<List<ElevatorInfo>>> GetElevatorStates()
     {
-        var elevatorStates = await _serviceManager.ElevatorStateManager.GetAllElevatorStatesAsync();
-        return Ok(elevatorStates);
+        var serviceResponse = await _serviceManager.ElevatorStateManager.FetchElevatorStatesAsync();
+        return Ok(serviceResponse.Data);
     }
 
     

@@ -12,24 +12,20 @@ using System.Threading.Tasks;
 namespace ES.Infrastructure.Implementations.Commands;
 
 
-internal class LoadPassengerCommand : IElevatorCommand
+internal class LoadCommand : IElevatorCommand
 {
     private readonly IServiceManager _serviceManager;
-    private readonly ElevatorRequest _request;
 
-    public LoadPassengerCommand(IServiceManager serviceManager, ElevatorRequest elevatorRequest)
+    public LoadCommand(IServiceManager serviceManager)
     {
         _serviceManager = serviceManager;
-        _request = elevatorRequest;
             
     }
 
     public async Task ExecuteAsync()
     {
-        var result = await _serviceManager.ElevatorService.LoadElevator(elevatorId, _request);
-        if (!result.Successful && result.Data != null)
-        {
-            await _serviceManager.ElevatorStateManager.BroadcastStateAsync(elevatorId, result.Data);
-        }
+        throw new NotImplementedException();
     }
+
+    
 }

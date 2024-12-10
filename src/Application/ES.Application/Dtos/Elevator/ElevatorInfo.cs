@@ -122,11 +122,11 @@ public record ElevatorInfo
     /// <summary>
     /// Dequeues a request from the elevator's request queue.
     /// </summary>
-    public void DequeueRequest() 
+    public void DequeueRequest(ElevatorRequest request) 
     {
         lock (_lock)
         {
-            RequestQueue.TryDequeue(out _);
+            RequestQueue.TryDequeue(out request!);
         }
     }
 

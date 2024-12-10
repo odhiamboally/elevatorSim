@@ -10,6 +10,6 @@ namespace ES.Application.Abstractions.IServices;
 
 public interface IElevatorStateManager
 {
-    Task<Response<bool>> BroadcastStateAsync(int elevatorId, ElevatorInfo updatedInfo);
-    Task<Response<List<ElevatorInfo>>> GetAllElevatorStatesAsync();
+    Task<Response<bool>> FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo);
+    Task<Response<List<ElevatorInfo>>> FetchElevatorStatesAsync();
 }
