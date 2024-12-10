@@ -65,14 +65,6 @@
                                     <DataAnnotationsValidator />
                                     <ValidationSummary />
 
-                                    <div class="mb-3">
-                                        <label for="fromFloor" class="form-label">From Floor</label>
-                                        <InputNumber id="fromFloor"
-                                                     @bind-Value="FromFloor"
-                                                     class="form-control"
-                                                     min="1" max="20" />
-                                    </div>
-
                                     <div class="mb-3"> 
                                         <label for="toFloor" class="form-label">To Floor</label>
                                         <InputNumber id="toFloor"
@@ -108,7 +100,7 @@
         <div class="d-flex flex-wrap justify-content-md-between">
             @for (int i = 1; i <= 20; i++) 
             {
-                <div class="floor-card col-md-2 mb-2 mx-1">
+                <div class="floor-card col-2 mb-2 mx-1">
                     <div class="card">
                         <div class="card-header text-white text-center" style="background-color: #808080;">
                             Floor @i
