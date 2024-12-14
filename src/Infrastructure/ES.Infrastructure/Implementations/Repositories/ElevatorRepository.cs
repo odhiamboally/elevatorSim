@@ -62,47 +62,50 @@ internal sealed class ElevatorRepository : IElevatorRepository
 
         };
 
-        var elevator1 = new Elevator
+        _elevators.TryAdd(1, new Elevator
         {
             Id = 1,
             Capacity = 10,
-            CurrentFloor = 1,
+            CurrentFloor = 3,
             CurrentLoad = 0,
-            Status = ElevatorStatus.Idle,
-            Direction = ElevatorDirection.Idle
-        };
-        var elevator2 = new Elevator
+            Status = ElevatorStatus.Moving,
+            Direction = ElevatorDirection.Up,
+            RequestQueue = new Queue<int>([1, 4])
+        });
+
+        _elevators.TryAdd(2, new Elevator
         {
             Id = 2,
             Capacity = 10,
             CurrentFloor = 1,
-            CurrentLoad = 0,
-            Status = ElevatorStatus.Idle,
-            Direction = ElevatorDirection.Idle
-        };
-        var elevator3 = new Elevator
+            CurrentLoad = 6,
+            Status = ElevatorStatus.Moving,
+            Direction = ElevatorDirection.Up,
+            RequestQueue = new Queue<int>([2, 5, 7])
+
+        });
+
+        _elevators.TryAdd(3, new Elevator
         {
             Id = 3,
             Capacity = 10,
-            CurrentFloor = 1,
-            CurrentLoad = 0,
-            Status = ElevatorStatus.Idle,
-            Direction = ElevatorDirection.Idle
-        };
-        var elevator4 = new Elevator
+            CurrentFloor = 6,
+            CurrentLoad = 1,
+            Status = ElevatorStatus.Moving,
+            Direction = ElevatorDirection.Down,
+            RequestQueue = new Queue<int>([3, 6])
+        });
+
+        _elevators.TryAdd(4, new Elevator
         {
             Id = 4,
             Capacity = 10,
             CurrentFloor = 1,
-            CurrentLoad = 0,
-            Status = ElevatorStatus.Idle,
-            Direction = ElevatorDirection.Idle
-        };
-
-        _elevators.TryAdd(elevator1.Id, elevator1);
-        _elevators.TryAdd(elevator2.Id, elevator2);
-        _elevators.TryAdd(elevator3.Id, elevator3);
-        _elevators.TryAdd(elevator4.Id, elevator4);
+            CurrentLoad = 5,
+            Status = ElevatorStatus.Moving,
+            Direction = ElevatorDirection.Up,
+            RequestQueue = new Queue<int>([8])
+        });
 
     }
 
@@ -117,7 +120,7 @@ internal sealed class ElevatorRepository : IElevatorRepository
 
     public async Task<Elevator> CreateToListAsync(Elevator entity)
     {
-        entity.Id = IdGenerator.GetElevatorNextId(); // Generate a new ID
+        entity.Id = IdGenerator.GetUniqueId(); // Generate a new ID
         _elevatorList.Add(entity);
         return entity;
     }

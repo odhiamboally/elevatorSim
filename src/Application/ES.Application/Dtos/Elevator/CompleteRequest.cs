@@ -8,5 +8,5 @@ namespace ES.Application.Dtos.Elevator;
 public record CompleteRequest
 {
     public ElevatorInfo? ElevatorInfo { get; init; }
-    public ElevatorRequest? ElevatorRequest { get; init; }
+    public RequestInfo? ElevatorRequest { get; init; }
 }

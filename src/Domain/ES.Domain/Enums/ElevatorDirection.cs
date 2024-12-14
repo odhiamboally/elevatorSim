@@ -2,7 +2,8 @@
 
 public enum ElevatorDirection
 {
+    Idle,
     Up,
-    Down,
-    Idle
+    Down
+    
 }

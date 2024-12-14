@@ -6,6 +6,6 @@ public record FloorInfo
 {
     public int Id { get; init; }
     public int PeopleCount { get; init; }
-    public Queue<ElevatorRequest> RequestQueue { get; set; } = [];
+    public Queue<RequestInfo> RequestQueue { get; set; } = [];
 
 }

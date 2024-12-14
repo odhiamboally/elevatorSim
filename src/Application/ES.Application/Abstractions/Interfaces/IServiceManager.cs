@@ -8,8 +8,9 @@ public interface IServiceManager
 
     IElevatorService ElevatorService { get; }
     IElevatorStateManager ElevatorStateManager { get; }
-    IFloorService FloorService { get; }
+    IFloorQueueService FloorService { get; }
     IFloorQueueManager FloorQueueManager { get; }
+    IQueueService QueueService { get; }
 
 
     /// <summary>

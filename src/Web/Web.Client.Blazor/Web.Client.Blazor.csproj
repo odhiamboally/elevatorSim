@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\Shared\ES.Shared\ES.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utilities\Common\" />
+  </ItemGroup>
+
 </Project>

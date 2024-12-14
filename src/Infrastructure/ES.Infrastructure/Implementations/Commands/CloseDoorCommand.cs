@@ -10,11 +10,9 @@ namespace ES.Infrastructure.Implementations.Commands;
 
 internal sealed class CloseDoorCommand : IElevatorCommand
 {
-    private readonly IServiceManager _serviceManager;
 
     public CloseDoorCommand()
     {
-
 
     }
     public Task ExecuteAsync()

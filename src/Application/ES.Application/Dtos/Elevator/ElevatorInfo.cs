@@ -1,5 +1,6 @@
-﻿using ES.Application.Utilities;
-using ES.Domain.Enums;
+﻿using ES.Domain.Enums;
+
+using System.Text.Json.Serialization;
 
 namespace ES.Application.Dtos.Elevator;
 
@@ -13,17 +14,11 @@ public record ElevatorInfo
     public int Capacity => MaxCapacity;
 
     // Private fields for mutable properties
-    private int _currentLoad;
     private int _currentFloor;
-    private int _status; // Internally store the status as an int (enum)
-    private int _direction; // Internally store the direction as an int (enum)
-
-
-    public int CurrentLoad
-    {
-        get => _currentLoad;
-        private set => _currentLoad = Math.Clamp(value, 0, MaxCapacity);
-    }
+    private int _currentLoad;
+    
+    private ElevatorStatus _status = ElevatorStatus.Idle; 
+    private ElevatorDirection _direction = ElevatorDirection.Idle;
 
     public int CurrentFloor
     {
@@ -31,35 +26,43 @@ public record ElevatorInfo
         private set => _currentFloor = value;
     }
 
+    public int CurrentLoad
+    {
+        get => _currentLoad;
+        private set => _currentLoad = Math.Clamp(value, 0, MaxCapacity);
+    }
+
     public ElevatorStatus Status
     {
-        get => (ElevatorStatus)_status;
-        private set => _status = (int)value;
+        get => _status;
+        private set => _status = value;
     }
 
     public ElevatorDirection Direction
     {
-        get => (ElevatorDirection)_direction;
-        private set => _direction = (int)value;
+        get => _direction;
+        private set => _direction = value;
     }
 
-    public Queue<ElevatorRequest> RequestQueue { get; private set; } = [];
+    public Queue<RequestInfo> RequestQueue { get; private set; } = [];
 
-    public ElevatorInfo(int id, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction, Queue<ElevatorRequest> requestQueue)
+    [JsonConstructor]
+    public ElevatorInfo(int id, int currentFloor, int currentLoad, ElevatorStatus status, ElevatorDirection direction, Queue<RequestInfo> requestQueue)
     {
         Id = id;
-        CurrentLoad = currentLoad;
         CurrentFloor = currentFloor;
+        CurrentLoad = currentLoad;
         Status = status;
         Direction = direction;
         RequestQueue = requestQueue;
     }
 
-    public ElevatorInfo(int id, int currentLoad, int currentFloor, ElevatorStatus status, ElevatorDirection direction)
+    //[JsonConstructor]
+    public ElevatorInfo(int id, int currentFloor, int currentLoad, ElevatorStatus status, ElevatorDirection direction)
     {
         Id = id;
-        CurrentLoad = currentLoad;
         CurrentFloor = currentFloor;
+        CurrentLoad = currentLoad;
         Status = status;
         Direction = direction;
     }
@@ -94,8 +97,11 @@ public record ElevatorInfo
     /// </summary>
     /// <param name="newStatus">The new status to set.</param>
     public void UpdateStatus(ElevatorStatus newStatus)
-    { 
-        Interlocked.Exchange(ref _status, (int)newStatus); 
+    {
+        lock (this)
+        {
+            _status = newStatus;
+        }
     }
 
     /// <summary>
@@ -103,15 +109,18 @@ public record ElevatorInfo
     /// </summary>
     /// <param name="newDirection">The new direction to set.</param>
     public void UpdateDirection(ElevatorDirection newDirection)
-    { 
-        Interlocked.Exchange(ref _direction, (int)newDirection); 
+    {
+        lock (this)
+        {
+            _direction = newDirection;
+        }
     }
 
     /// <summary>
     /// Enqueues a request to the elevator's request queue.
     /// </summary>
     /// <param name="request">The request to enqueue.</param>
-    public void EnqueueRequest(ElevatorRequest request)
+    public void EnqueueRequest(RequestInfo request)
     {
         lock (_lock)
         {
@@ -122,11 +131,19 @@ public record ElevatorInfo
     /// <summary>
     /// Dequeues a request from the elevator's request queue.
     /// </summary>
-    public void DequeueRequest(ElevatorRequest request) 
+    public void DequeueRequest(RequestInfo request) 
     {
         lock (_lock)
         {
             RequestQueue.TryDequeue(out request!);
+        }
+    }
+
+    public void ReOrderQueue(ElevatorInfo elevatorInfo)
+    {
+        lock (_lock)
+        {
+            RequestQueue.OrderBy(r => Math.Abs(r.FromFloor - elevatorInfo.CurrentFloor));
         }
     }
 
@@ -156,43 +173,43 @@ public record ElevatorInfo
     }
 
     // Enqueue a specific request
-    public ElevatorInfo WithEnqueuedRequest(ElevatorRequest request)
+    public ElevatorInfo WithEnqueuedRequest(RequestInfo request)
     {
-        var newQueue = new Queue<ElevatorRequest>(RequestQueue);
+        var newQueue = new Queue<RequestInfo>(RequestQueue);
         newQueue.Enqueue(request);
         return this with { RequestQueue = newQueue };
     }
 
     // (Optimized): If immutability must be preserved
-    public ElevatorInfo WithEnqueuedRequest_Optimized(ElevatorRequest request)
+    public ElevatorInfo WithEnqueuedRequest_Optimized(RequestInfo request)
     {
         // Use a List for more efficient copying
         var newQueue = RequestQueue.ToList();
         newQueue.Add(request); // Add at the end
-        return this with { RequestQueue = new Queue<ElevatorRequest>(newQueue) };
+        return this with { RequestQueue = new Queue<RequestInfo>(newQueue) };
     }
 
-    public ElevatorInfo WithEnqueuedRequest_Mutable(ElevatorRequest request)
+    public ElevatorInfo WithEnqueuedRequest_Mutable(RequestInfo request)
 {
     RequestQueue.Enqueue(request); // Directly enqueue to the existing queue
     return this; // Return the same instance since the state is modified
 }
 
     // Dequeue a specific request
-    public ElevatorInfo WithDequeuedRequest(ElevatorRequest request)
+    public ElevatorInfo WithDequeuedRequest(RequestInfo request)
     {
-        var newQueue = new Queue<ElevatorRequest>(RequestQueue.Where(r => r != request));
+        var newQueue = new Queue<RequestInfo>(RequestQueue.Where(r => r != request));
         return this with { RequestQueue = newQueue };
     }
 
     // (Optimized)
-    public ElevatorInfo WithDequeuedRequest_Optimized(ElevatorRequest request)
+    public ElevatorInfo WithDequeuedRequest_Optimized(RequestInfo request)
     {
         var newQueue = RequestQueue.Where(r => r != request).ToList();
-        return this with { RequestQueue = new Queue<ElevatorRequest>(newQueue) };
+        return this with { RequestQueue = new Queue<RequestInfo>(newQueue) };
     } 
 
-    public ElevatorInfo WithDequeuedRequest_Mutable(ElevatorRequest request)
+    public ElevatorInfo WithDequeuedRequest_Mutable(RequestInfo request)
     {
         // Remove the specific request directly
         var removed = RequestQueue.TryDequeue(out var dequeuedItem);
@@ -201,48 +218,36 @@ public record ElevatorInfo
 
 
     // Enqueue a request at a specific position (if necessary)
-    public ElevatorInfo WithEnqueuedRequestAtPosition(ElevatorRequest request, int position)
+    public ElevatorInfo WithEnqueuedRequestAtPosition(RequestInfo request, int position)
     {
-        var newQueue = new Queue<ElevatorRequest>(RequestQueue.Take(position));
+        var newQueue = new Queue<RequestInfo>(RequestQueue.Take(position));
         newQueue.Enqueue(request);
-        newQueue = new Queue<ElevatorRequest>(newQueue.Concat(RequestQueue.Skip(position)));
+        newQueue = new Queue<RequestInfo>(newQueue.Concat(RequestQueue.Skip(position)));
         return this with { RequestQueue = newQueue };
     }
 
-    public ElevatorInfo WithEnqueuedRequestAtPosition_Optimized(ElevatorRequest request, int position)
+    public ElevatorInfo WithEnqueuedRequestAtPosition_Optimized(RequestInfo request, int position)
     {
         var newQueue = RequestQueue.ToList();
         newQueue.Insert(position, request);
-        return this with { RequestQueue = new Queue<ElevatorRequest>(newQueue) };
+        return this with { RequestQueue = new Queue<RequestInfo>(newQueue) };
     }
 
 
     // Dequeue a specific request by its ID (or any identifying property)
     public ElevatorInfo WithDequeuedRequestById(int requestId)
     {
-        var newQueue = new Queue<ElevatorRequest>(RequestQueue.Where(r => r.Id != requestId));
+        var newQueue = new Queue<RequestInfo>(RequestQueue.Where(r => r.Id != requestId));
         return this with { RequestQueue = newQueue };
     }
 
     public ElevatorInfo WithDequeuedRequestById_Optimized(int requestId)
     {
         var newQueue = RequestQueue.Where(r => r.Id != requestId).ToList();
-        return this with { RequestQueue = new Queue<ElevatorRequest>(newQueue) };
+        return this with { RequestQueue = new Queue<RequestInfo>(newQueue) };
     }
 
     #endregion
 
 }
 
-public record ElevatorInfo1
-{
-    public int Id { get; init;  } = RequestIdGenerator.GetElevatorNextId();
-    public int Capacity { get; init; } = 10;
-    public int CurrentLoad { get; init; }
-    public int CurrentFloor { get; init; }
-    public ElevatorStatus Status { get; init; }
-    public ElevatorDirection Direction { get; init; }
-    public DateTimeOffset EstimatedArrivalTime { get; init; }
-    public Queue<ElevatorRequest> RequestQueue { get; init; } = [];
-
-}

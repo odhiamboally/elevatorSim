@@ -73,8 +73,9 @@ public static class DependencyInjection
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IElevatorService, ElevatorService>();
         services.AddScoped<IElevatorStateManager, ElevatorStateManager>();
-        services.AddScoped<IFloorService, FloorService>();
+        services.AddScoped<IFloorQueueService, FloorQueueService>();
         services.AddScoped<IFloorQueueManager, FloorQueueManager>();
+        services.AddScoped<IQueueService, QueueService>();
 
         services.AddScoped<OpenDoorCommand>();
         services.AddScoped<CloseDoorCommand>();
@@ -93,6 +94,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddTransient(typeof(IBaseRepository<>), typeof(BaseRepository<>));
         services.AddScoped<IElevatorRepository, ElevatorRepository>();
+        services.AddScoped<IFloorQueueRepository, FloorQueueRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
 
         return services;
