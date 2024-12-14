@@ -15,4 +15,9 @@ public class ElevatorHub : Hub
     {
         await Clients.All.SendAsync("ReceiveElevatorState", elevatorId, elevatorInfo);
     }
+
+    public async Task SendElevatorStates(int elevatorId, ElevatorInfo elevatorInfo)
+    {
+        await Clients.All.SendAsync("ReceiveElevatorStates", elevatorId, elevatorInfo);
+    }
 }

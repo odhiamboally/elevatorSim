@@ -57,13 +57,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.MapHub<ElevatorHub>("/elevatorHub");
 app.UseExceptionHandler((_ => { }));
 app.UseHsts();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors(corsOpenPolicy);
 app.UseRouting();
-app.MapHub<ElevatorHub>("/elevatorHub");
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

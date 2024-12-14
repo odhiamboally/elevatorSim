@@ -15,11 +15,10 @@ namespace ES.Infrastructure.Implementations.Hubs;
 
 public class ElevatorHub : Hub, IElevatorHub
 {
-    private readonly IHubContext<ElevatorHub> _hubContext;
+    
 
-    public ElevatorHub(IHubContext<ElevatorHub> hubContext)
+    public ElevatorHub()
     {
-        _hubContext = hubContext;
             
     }
 
@@ -27,7 +26,7 @@ public class ElevatorHub : Hub, IElevatorHub
     {
         try
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveElevatorState", elevatorId, updatedInfo);
+            await Clients.All.SendAsync("ReceiveElevatorState", elevatorId, updatedInfo);
         }
         catch (Exception)
         {
@@ -40,7 +39,7 @@ public class ElevatorHub : Hub, IElevatorHub
     {
         try
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveElevatorStates", elevatorStates);
+            await Clients.All.SendAsync("ReceiveElevatorStates", elevatorStates);
         }
         catch (Exception)
         {

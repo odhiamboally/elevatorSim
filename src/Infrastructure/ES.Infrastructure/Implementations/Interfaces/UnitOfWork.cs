@@ -7,16 +7,19 @@ public class UnitOfWork : IUnitOfWork
 {
     public ILogRepository LogRepository { get; private set; }
     public IElevatorRepository ElevatorRepository { get; private set; }
+    public IFloorQueueRepository FloorQueueRepository { get; private set; }
 
     private readonly DBContext _context;
 
     public UnitOfWork(
         ILogRepository logRepository,
         IElevatorRepository elevatorRepository,
+        IFloorQueueRepository floorQueueRepository,
         DBContext context)
     {
         LogRepository = logRepository;
         ElevatorRepository = elevatorRepository;
+        FloorQueueRepository = floorQueueRepository;
         _context = context;
     }
 

@@ -10,8 +10,9 @@ internal sealed class ServiceManager : IServiceManager
     private readonly IKeyedServiceResolver<string, IElevatorCommand> _elevatorCommandResolver;
     public IElevatorService ElevatorService { get; }
     public IElevatorStateManager ElevatorStateManager { get; }
-    public IFloorService FloorService { get; }
+    public IFloorQueueService FloorService { get; }
     public IFloorQueueManager FloorQueueManager { get; }
+    public IQueueService QueueService { get; }
 
     public ServiceManager(
 
@@ -19,8 +20,9 @@ internal sealed class ServiceManager : IServiceManager
         IKeyedServiceResolver<string, IElevatorCommand> elevatorCommandResolver,
         IElevatorService elevatorService, 
         IElevatorStateManager elevatorStateService, 
-        IFloorService floorService,
-        IFloorQueueManager floorQueueManager)
+        IFloorQueueService floorService,
+        IFloorQueueManager floorQueueManager,
+        IQueueService queueService)
     {
         //ElevatorCommand = elevatorCommand;
         _elevatorCommandResolver = elevatorCommandResolver;
@@ -28,6 +30,7 @@ internal sealed class ServiceManager : IServiceManager
         ElevatorStateManager = elevatorStateService;
         FloorService = floorService;
         FloorQueueManager = floorQueueManager;
+        QueueService = queueService;
     }
 
     public IElevatorCommand GetElevatorCommand(string key) => _elevatorCommandResolver.Resolve(key);

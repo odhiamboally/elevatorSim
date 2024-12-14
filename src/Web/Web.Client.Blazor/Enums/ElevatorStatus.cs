@@ -2,8 +2,8 @@
 
 public enum ElevatorStatus
 {
-    Moving,
     Idle,
+    Moving,
     Loading,
     OffLoading,
     Waiting,

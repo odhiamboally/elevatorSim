@@ -4,7 +4,7 @@ using Web.Client.Blazor.Dtos;
 
 namespace Web.Client.Blazor.Utilities.Validations;
 
-public class ElevatorRequestValidator : AbstractValidator<ElevatorRequest>
+public class ElevatorRequestValidator : AbstractValidator<RequestInfo>
 {
     public ElevatorRequestValidator()
     {

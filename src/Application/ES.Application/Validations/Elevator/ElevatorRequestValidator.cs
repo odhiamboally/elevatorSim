@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace ES.Application.Validations.Elevator;
 
-public class ElevatorRequestValidator : AbstractValidator<ElevatorRequest>
+public class ElevatorRequestValidator : AbstractValidator<RequestInfo>
 {
     public ElevatorRequestValidator()
     {
