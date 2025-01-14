@@ -74,4 +74,12 @@ internal sealed class SignalRService : ISignalRService
     {
         await _hubConnection.StopAsync();
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
 }

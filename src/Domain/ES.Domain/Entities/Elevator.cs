@@ -12,5 +12,6 @@ public class Elevator
     public ElevatorStatus Status { get; set; }
     public ElevatorDirection Direction { get; set; }
     public Queue<int> RequestQueue { get; set; } = [];
+    public virtual List<Request>? Requests { get; set; }
 
 }

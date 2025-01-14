@@ -9,6 +9,7 @@ using ES.Application.Abstractions.Interfaces;
 using ES.Application.Abstractions.IServices;
 
 namespace ES.Infrastructure.Implementations.Interfaces;
+
 internal sealed class HubManager : IHubManager
 {
     public IElevatorHub ElevatorHub { get; }

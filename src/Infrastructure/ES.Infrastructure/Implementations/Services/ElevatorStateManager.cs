@@ -7,6 +7,7 @@ using ES.Application.Abstractions.Interfaces;
 using ES.Application.Abstractions.IServices;
 using ES.Application.Dtos.Common;
 using ES.Application.Dtos.Elevator;
+using ES.Domain.Entities;
 using ES.Domain.Enums;
 using ES.Infrastructure.Implementations.Hubs;
 
@@ -24,23 +25,24 @@ namespace ES.Infrastructure.Implementations.Services;
 internal sealed class ElevatorStateManager : IElevatorStateManager
 {
 
-    private readonly IElevatorHub _elevatorHub;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public ElevatorStateManager(IElevatorHub elevatorHub, IUnitOfWork unitOfWork, IMapper mapper)
+    private readonly IHubContext<ElevatorHub> _hubContext;
+
+    public ElevatorStateManager(IUnitOfWork unitOfWork, IMapper mapper, IHubContext<ElevatorHub> hubContext)
     {
-        _elevatorHub = elevatorHub;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _hubContext = hubContext;
     }
 
-    public async Task<Response<bool>> FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo)
+    public async Task<Response<ElevatorInfo>> FetchElevatorStateAsync(int elevatorId, ElevatorInfo updatedInfo)
     {
         try
         {
-            await _elevatorHub.FetchElevatorStateAsync(elevatorId, updatedInfo);
-            return Response<bool>.Success("Broadcast successful.", true);
+            await _hubContext.Clients.All.SendAsync("ReceiveElevatorState", elevatorId, updatedInfo);
+            return Response<ElevatorInfo>.Success("Broadcast successful.", updatedInfo);
         }
         catch (Exception)
         {
@@ -63,7 +65,7 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
                 ))
                 .ToList();
 
-            await _elevatorHub.FetchElevatorStatesAsync(elevatorStates);
+            await _hubContext.Clients.All.SendAsync("ReceiveElevatorStates", elevatorStates);
             return Response<List<ElevatorInfo>>.Success("Elevator States:", elevatorStates);
 
         }
@@ -74,5 +76,35 @@ internal sealed class ElevatorStateManager : IElevatorStateManager
         }
     }
 
+    public async Task<Response<ElevatorInfo>> UpdateElevatorStateAsync(ElevatorInfo updatedInfo)
+    {
+        try
+        {
+            var elevator = new Elevator
+            {
+                Id = updatedInfo.Id,
+                Capacity = updatedInfo.Capacity,
+                CurrentFloor = updatedInfo.CurrentFloor,
+                CurrentLoad = updatedInfo.CurrentLoad,
+                Status = updatedInfo.Status,
+                Direction = updatedInfo.Direction,
+                RequestQueue = new Queue<int>(updatedInfo.RequestQueue.Select(x => x.Id))
 
+            };
+
+            await _unitOfWork.ElevatorRepository.UpdateAsync(elevator);
+            await _hubContext.Clients.All.SendAsync("ReceiveElevatorState", elevator.Id, updatedInfo);
+            return Response<ElevatorInfo>.Success("Broadcast successful.", updatedInfo);
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }        
+    }
+
+    public Task<Response<ElevatorInfo>> UpdateElevatorStatesAsync(List<ElevatorInfo> elevatorInfos)
+    {
+        throw new NotImplementedException();
+    }
 }

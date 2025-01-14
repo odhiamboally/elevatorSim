@@ -14,11 +14,9 @@ namespace ES.Infrastructure.Implementations.Commands;
 
 internal class LoadCommand : IElevatorCommand
 {
-    private readonly IServiceManager _serviceManager;
 
-    public LoadCommand(IServiceManager serviceManager)
+    public LoadCommand()
     {
-        _serviceManager = serviceManager;
             
     }
 

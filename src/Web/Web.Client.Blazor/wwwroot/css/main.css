@@ -1,0 +1,98 @@
+﻿.page{
+    bottom: 0;
+}
+
+/******************************** Sidebar **************************************************************************/
+
+.sidebar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    /*margin-bottom: 1.5rem;*/
+    /*padding-top: 6rem;*/
+    padding-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    width: 16rem;
+}
+
+
+/******************************** Custom **************************************************************************/
+.floor-card {
+    box-sizing: border-box;
+    flex: 0 0 calc(20% - 10px); /* 20% width minus margin */
+    margin-bottom: 20px; /* Space below each card */
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+.card-header {
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.card-body {
+    text-align: center;
+}
+
+
+
+@media (max-width: 768px) {
+    .floor-card {
+        flex: 0 0 calc(50% - 10px); /* 2 items per row */
+    }
+}
+
+@media (max-width: 576px) {
+    .floor-card {
+        flex: 0 0 calc(100% - 10px); /* 1 item per row */
+    }
+}
+
+/* Optional: Adjustments for responsiveness */
+@media (max-width: 768px) {
+    .sidebar {
+        position: static; /* Collapse the sidebar on smaller screens */
+        width: 100%; /* Full-width sidebar on small screens */
+        height: auto; /* Allow scroll only when needed */
+    }
+
+    main {
+        margin-left: 0; /* Full-width main content area */
+    }
+}
+
+
+/******************************** Carousel **************************************************************************/
+
+.carousel-item img {
+    object-fit: cover;
+    height: 400px;
+}
+
+
+/******************************** Footer **************************************************************************/
+footer.footer {
+    position: sticky;
+    bottom: 0;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+a.footer-link {
+    pointer-events: auto; /* Ensure the link is clickable */
+}

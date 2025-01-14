@@ -9,6 +9,7 @@ public interface ISignalRService
     /// </summary>
     Task StartAsync();
     Task StopAsync();
+    ValueTask DisposeAsync();
 
     /// <summary>
     /// Event triggered when an elevator state is received.

@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 namespace ES.Application.Dtos.Elevator;
 public record DispatchElevatorRequest
 {
-    public ElevatorRequest? ElevatorRequest { get; init; }
+    public RequestInfo? ElevatorRequest { get; init; }
     public ElevatorInfo? ElevatorInfo { get; init; }
 }
