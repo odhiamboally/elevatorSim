@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CommonUtilities\**" />
+    <Compile Remove="Dtos\**" />
+    <Compile Remove="GlobalEnums\**" />
+    <Compile Remove="Validations\**" />
+    <EmbeddedResource Remove="CommonUtilities\**" />
+    <EmbeddedResource Remove="Dtos\**" />
+    <EmbeddedResource Remove="GlobalEnums\**" />
+    <EmbeddedResource Remove="Validations\**" />
+    <None Remove="CommonUtilities\**" />
+    <None Remove="Dtos\**" />
+    <None Remove="GlobalEnums\**" />
+    <None Remove="Validations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
